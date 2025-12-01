@@ -1,0 +1,19 @@
+# output
+dist
+tests/tmp-*
+
+# temporary files dir
+tmp
+
+# dependencies
+node_modules
+
+# Local agent/Claude files with personal context
+*.local.md
+.claude/
+
+# Obsidian config
+.obsidian/
+
+# Finder (MacOS) folder config
+.DS_Store

@@ -1,0 +1,21 @@
+<article class="post">
+    {{#DRAFT}}
+    <div class="draft-warning">
+        <strong>Draft:</strong> This post is not published and may be incomplete or change significantly.
+    </div>
+    {{/DRAFT}}
+    <header class="post-header">
+        <h2>{{TITLE}}</h2>
+        <div class="post-meta">
+            <time datetime="{{DATE_ISO}}">{{DATE}}</time>
+            {{#TAGS}}
+            <span class="tags">
+                {{TAGS}}
+            </span>
+            {{/TAGS}}
+        </div>
+    </header>
+    <div class="post-content">
+        {{CONTENT}}
+    </div>
+</article>
