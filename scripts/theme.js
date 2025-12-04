@@ -20,9 +20,9 @@
 	function updateButtons(activeTheme) {
 		buttons.forEach((btn) => {
 			const btnTheme = btn.dataset.themeBtn;
+			const variants = btn.dataset.themeVariants?.split(",") || [];
 			const isActive =
-				btnTheme === activeTheme ||
-				(btnTheme === "hotdog" && activeTheme === "hotdog-alt");
+				btnTheme === activeTheme || variants.includes(activeTheme);
 			btn.classList.toggle("active", isActive);
 		});
 	}
@@ -32,11 +32,13 @@
 	buttons.forEach((btn) => {
 		btn.addEventListener("click", () => {
 			let theme = btn.dataset.themeBtn;
-			if (theme === "hotdog") {
-				if (currentTheme === "hotdog") {
-					theme = "hotdog-alt";
-				} else if (currentTheme === "hotdog-alt") {
-					theme = "hotdog";
+			const variants = btn.dataset.themeVariants?.split(",") || [];
+			if (variants.length > 0) {
+				const currentIndex = variants.indexOf(currentTheme);
+				if (currentIndex !== -1) {
+					theme = variants[(currentIndex + 1) % variants.length];
+				} else {
+					theme = variants[Math.floor(Math.random() * variants.length)];
 				}
 			}
 			currentTheme = theme;
