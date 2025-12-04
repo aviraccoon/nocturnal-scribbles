@@ -1,34 +1,51 @@
 (() => {
 	const buttons = document.querySelectorAll("[data-theme-btn]");
-	const savedTheme = localStorage.getItem("theme") || "system";
+	let currentTheme = localStorage.getItem("theme") || "system";
+
+	function randomTheme() {
+		const themes = Array.from(buttons)
+			.map((btn) => btn.dataset.themeBtn)
+			.filter((t) => t !== "system" && t !== "chaos");
+		return themes[Math.floor(Math.random() * themes.length)];
+	}
 
 	function applyTheme(theme) {
-		if (theme === "dark") {
-			document.documentElement.setAttribute("data-theme", "dark");
-		} else if (theme === "light") {
-			document.documentElement.setAttribute("data-theme", "light");
-		} else {
+		if (theme === "system") {
 			document.documentElement.removeAttribute("data-theme");
+		} else {
+			document.documentElement.setAttribute("data-theme", theme);
 		}
 	}
 
 	function updateButtons(activeTheme) {
 		buttons.forEach((btn) => {
-			if (btn.dataset.themeBtn === activeTheme) {
-				btn.classList.add("active");
-			} else {
-				btn.classList.remove("active");
-			}
+			const btnTheme = btn.dataset.themeBtn;
+			const isActive =
+				btnTheme === activeTheme ||
+				(btnTheme === "hotdog" && activeTheme === "hotdog-alt");
+			btn.classList.toggle("active", isActive);
 		});
 	}
 
-	updateButtons(savedTheme);
+	updateButtons(currentTheme);
 
 	buttons.forEach((btn) => {
 		btn.addEventListener("click", () => {
-			const theme = btn.dataset.themeBtn;
+			let theme = btn.dataset.themeBtn;
+			if (theme === "hotdog") {
+				if (currentTheme === "hotdog") {
+					theme = "hotdog-alt";
+				} else if (currentTheme === "hotdog-alt") {
+					theme = "hotdog";
+				}
+			}
+			currentTheme = theme;
 			localStorage.setItem("theme", theme);
-			applyTheme(theme);
+			if (theme === "chaos") {
+				applyTheme(randomTheme());
+			} else {
+				applyTheme(theme);
+			}
 			updateButtons(theme);
 		});
 	});

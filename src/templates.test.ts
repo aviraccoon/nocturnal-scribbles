@@ -3,6 +3,7 @@ import { existsSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import {
 	applyBaseTemplate,
+	extractChaosThemes,
 	formatDate,
 	generateArchivePage,
 	generateIndexPage,
@@ -161,6 +162,62 @@ describe("templates", () => {
 			const result = await processIncludes(content, TEST_DIR);
 
 			expect(result).toBe("<script>console.log('test');</script>");
+		});
+	});
+
+	describe("extractChaosThemes", () => {
+		test("should extract theme names from data-theme-btn attributes", () => {
+			const html = `
+				<button data-theme-btn="light">light</button>
+				<button data-theme-btn="dark">dark</button>
+			`;
+			const themes = extractChaosThemes(html);
+
+			expect(themes).toEqual(["light", "dark"]);
+		});
+
+		test("should filter out system and chaos themes", () => {
+			const html = `
+				<button data-theme-btn="system">system</button>
+				<button data-theme-btn="light">light</button>
+				<button data-theme-btn="dark">dark</button>
+				<button data-theme-btn="chaos">chaos</button>
+			`;
+			const themes = extractChaosThemes(html);
+
+			expect(themes).toEqual(["light", "dark"]);
+		});
+
+		test("should use data-theme-variants when present", () => {
+			const html = `
+				<button data-theme-btn="light">light</button>
+				<button data-theme-btn="hotdog" data-theme-variants="hotdog,hotdog-alt">hotdog</button>
+			`;
+			const themes = extractChaosThemes(html);
+
+			expect(themes).toEqual(["light", "hotdog", "hotdog-alt"]);
+		});
+
+		test("should return empty array when no theme buttons", () => {
+			const html = "<div>No buttons here</div>";
+			const themes = extractChaosThemes(html);
+
+			expect(themes).toEqual([]);
+		});
+
+		test("should handle real-world footer example", () => {
+			const html = `
+				<div class="theme-switcher">
+					<button data-theme-btn="system">system</button>
+					<button data-theme-btn="light">light</button>
+					<button data-theme-btn="dark">dark</button>
+					<button data-theme-btn="hotdog" data-theme-variants="hotdog,hotdog-alt">hotdog</button>
+					<button data-theme-btn="chaos">chaos</button>
+				</div>
+			`;
+			const themes = extractChaosThemes(html);
+
+			expect(themes).toEqual(["light", "dark", "hotdog", "hotdog-alt"]);
 		});
 	});
 

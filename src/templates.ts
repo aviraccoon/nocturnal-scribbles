@@ -68,6 +68,32 @@ export async function readTemplate(
 }
 
 /**
+ * Extracts theme names from data-theme-btn attributes in HTML.
+ * Uses data-theme-variants if present, otherwise uses the button value.
+ * Filters out "system" and "chaos" as those aren't real themes.
+ */
+export function extractChaosThemes(html: string): string[] {
+	const buttonRegex =
+		/data-theme-btn="([^"]+)"(?:\s+data-theme-variants="([^"]+)")?/g;
+	const themes: string[] = [];
+
+	for (const match of html.matchAll(buttonRegex)) {
+		const btnTheme = match[1];
+		const variants = match[2];
+
+		if (btnTheme === "system" || btnTheme === "chaos") continue;
+
+		if (variants) {
+			themes.push(...variants.split(","));
+		} else if (btnTheme) {
+			themes.push(btnTheme);
+		}
+	}
+
+	return themes;
+}
+
+/**
  * Wraps content in the base HTML template with title and description.
  * Replaces static asset references with hashed versions.
  */
@@ -105,8 +131,17 @@ export async function applyBaseTemplate(
 
 	let baseTemplate = await readTemplate("base.html", templatesDir);
 
+	// Extract chaos themes before processing includes
+	const chaosThemes = extractChaosThemes(baseTemplate);
+
 	// Process {{INCLUDE:path}} directives
 	baseTemplate = await processIncludes(baseTemplate, rootDir);
+
+	// Inject chaos themes into scripts
+	baseTemplate = baseTemplate.replace(
+		"__CHAOS_THEMES__",
+		chaosThemes.join(","),
+	);
 
 	// Replace static asset references with hashed versions
 	for (const [original, hashed] of Object.entries(assetMap)) {
