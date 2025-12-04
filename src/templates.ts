@@ -68,11 +68,28 @@ export async function readTemplate(
 }
 
 /**
+ * Extracts meta theme names from buttons with data-meta attribute.
+ * These are themes that don't have their own CSS (system, shuffle, chaos, etc).
+ */
+export function extractMetaThemes(html: string): string[] {
+	const metaButtonRegex = /data-theme-btn="([^"]+)"[^>]*data-meta/g;
+	const themes: string[] = [];
+
+	for (const match of html.matchAll(metaButtonRegex)) {
+		const theme = match[1];
+		if (theme) themes.push(theme);
+	}
+
+	return themes;
+}
+
+/**
  * Extracts theme names from data-theme-btn attributes in HTML.
  * Uses data-theme-variants if present, otherwise uses the button value.
- * Filters out "system" and "chaos" as those aren't real themes.
+ * Filters out meta themes (marked with data-meta) as those aren't real themes.
  */
 export function extractChaosThemes(html: string): string[] {
+	const metaThemes = extractMetaThemes(html);
 	const buttonRegex =
 		/data-theme-btn="([^"]+)"(?:\s+data-theme-variants="([^"]+)")?/g;
 	const themes: string[] = [];
@@ -81,7 +98,7 @@ export function extractChaosThemes(html: string): string[] {
 		const btnTheme = match[1];
 		const variants = match[2];
 
-		if (btnTheme === "system" || btnTheme === "chaos") continue;
+		if (!btnTheme || metaThemes.includes(btnTheme)) continue;
 
 		if (variants) {
 			themes.push(...variants.split(","));
@@ -131,17 +148,17 @@ export async function applyBaseTemplate(
 
 	let baseTemplate = await readTemplate("base.html", templatesDir);
 
-	// Extract chaos themes before processing includes
+	// Extract theme lists before processing includes
+	const metaThemes = extractMetaThemes(baseTemplate);
 	const chaosThemes = extractChaosThemes(baseTemplate);
 
 	// Process {{INCLUDE:path}} directives
 	baseTemplate = await processIncludes(baseTemplate, rootDir);
 
-	// Inject chaos themes into scripts
-	baseTemplate = baseTemplate.replace(
-		"__CHAOS_THEMES__",
-		chaosThemes.join(","),
-	);
+	// Inject theme lists into scripts
+	baseTemplate = baseTemplate
+		.replace("__META_THEMES__", metaThemes.join(","))
+		.replace("__CHAOS_THEMES__", chaosThemes.join(","));
 
 	// Replace static asset references with hashed versions
 	for (const [original, hashed] of Object.entries(assetMap)) {

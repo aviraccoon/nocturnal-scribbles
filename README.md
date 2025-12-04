@@ -6,7 +6,7 @@ Late-night thoughts on ADHD, dev tools, self-hosting, and whatever else keeps me
 
 ## What it is
 
-A custom static site generator built with Bun and TypeScript. Markdown files in git become static HTML with no framework, minimal JavaScript, and no tracking.
+A custom static site generator built with Bun and TypeScript. Markdown files in git become static HTML with no framework, no tracking, and minimal JavaScript (unless you choose violence in the theme switcher).
 
 ## Why custom-built
 

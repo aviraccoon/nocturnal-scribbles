@@ -4,6 +4,7 @@ import { join } from "node:path";
 import {
 	applyBaseTemplate,
 	extractChaosThemes,
+	extractMetaThemes,
 	formatDate,
 	generateArchivePage,
 	generateIndexPage,
@@ -165,6 +166,29 @@ describe("templates", () => {
 		});
 	});
 
+	describe("extractMetaThemes", () => {
+		test("should extract themes marked with data-meta", () => {
+			const html = `
+				<button data-theme-btn="system" data-meta>system</button>
+				<button data-theme-btn="light">light</button>
+				<button data-theme-btn="chaos" data-meta>chaos</button>
+			`;
+			const themes = extractMetaThemes(html);
+
+			expect(themes).toEqual(["system", "chaos"]);
+		});
+
+		test("should return empty array when no meta themes", () => {
+			const html = `
+				<button data-theme-btn="light">light</button>
+				<button data-theme-btn="dark">dark</button>
+			`;
+			const themes = extractMetaThemes(html);
+
+			expect(themes).toEqual([]);
+		});
+	});
+
 	describe("extractChaosThemes", () => {
 		test("should extract theme names from data-theme-btn attributes", () => {
 			const html = `
@@ -176,12 +200,12 @@ describe("templates", () => {
 			expect(themes).toEqual(["light", "dark"]);
 		});
 
-		test("should filter out system and chaos themes", () => {
+		test("should filter out meta themes (marked with data-meta)", () => {
 			const html = `
-				<button data-theme-btn="system">system</button>
+				<button data-theme-btn="system" data-meta>system</button>
 				<button data-theme-btn="light">light</button>
 				<button data-theme-btn="dark">dark</button>
-				<button data-theme-btn="chaos">chaos</button>
+				<button data-theme-btn="chaos" data-meta>chaos</button>
 			`;
 			const themes = extractChaosThemes(html);
 
@@ -208,11 +232,11 @@ describe("templates", () => {
 		test("should handle real-world footer example", () => {
 			const html = `
 				<div class="theme-switcher">
-					<button data-theme-btn="system">system</button>
+					<button data-theme-btn="system" data-meta>system</button>
 					<button data-theme-btn="light">light</button>
 					<button data-theme-btn="dark">dark</button>
 					<button data-theme-btn="hotdog" data-theme-variants="hotdog,hotdog-alt">hotdog</button>
-					<button data-theme-btn="chaos">chaos</button>
+					<button data-theme-btn="chaos" data-meta>chaos</button>
 				</div>
 			`;
 			const themes = extractChaosThemes(html);
