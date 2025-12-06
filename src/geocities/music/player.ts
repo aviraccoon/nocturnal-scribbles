@@ -7,7 +7,7 @@ import { isInTransition, toggleAutomix } from "./mixer";
 import { getCurrentStation, setCurrentStation } from "./radio";
 import { stations } from "./radio-data";
 import { saveSongAsWAV } from "./recorder";
-import type { TransitionStyle } from "./types";
+import type { TrackType, TransitionStyle } from "./types";
 
 const T = window.ThemeUtils;
 
@@ -130,6 +130,7 @@ export function addMusicPlayer(
 				<div class="player-mixer-row">
 					<label><input type="checkbox" data-track="arpeggio" checked> Arp</label>
 					<label><input type="checkbox" data-track="pad" checked> Pad</label>
+					<label><input type="checkbox" data-track="fx" checked> FX</label>
 				</div>
 				<div class="player-chaos">
 					<span class="player-chaos-label">CHAOS</span>
@@ -717,6 +718,7 @@ export function addMusicPlayer(
 			if (sectionInfo.activeTracks.drums) tracks.push("D");
 			if (sectionInfo.activeTracks.arpeggio) tracks.push("A");
 			if (sectionInfo.activeTracks.pad) tracks.push("P");
+			if (sectionInfo.activeTracks.fx) tracks.push("FX");
 			activeTracksEl.textContent = tracks.join(" ");
 		}
 	}
@@ -1136,12 +1138,7 @@ export function addMusicPlayer(
 	);
 	trackCheckboxes.forEach((checkbox) => {
 		checkbox.addEventListener("change", () => {
-			const track = checkbox.dataset.track as
-				| "melody"
-				| "bass"
-				| "drums"
-				| "arpeggio"
-				| "pad";
+			const track = checkbox.dataset.track as TrackType;
 			if (track) {
 				musicGen.setTrackMute(track, !checkbox.checked);
 			}

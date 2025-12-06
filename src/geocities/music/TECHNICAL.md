@@ -18,10 +18,11 @@ This document explains the technical architecture of the Geocities Music Player.
 5. [Tape Mode vs Radio Mode](#tape-mode-vs-radio-mode)
 6. [Automix & Dual-Deck Mixing](#automix--dual-deck-mixing)
 7. [The Chaos Slider](#the-chaos-slider)
-8. [Dusty Archives Effect](#dusty-archives-effect)
-9. [Radio: DJs, Jingles & Commercials](#radio-djs-jingles--commercials)
-10. [Export: WAV & MIDI](#export-wav--midi)
-11. [File Reference](#file-reference)
+8. [FX & Risers](#fx--risers)
+9. [Dusty Archives Effect](#dusty-archives-effect)
+10. [Radio: DJs, Jingles & Commercials](#radio-djs-jingles--commercials)
+11. [Export: WAV & MIDI](#export-wav--midi)
+12. [File Reference](#file-reference)
 
 ---
 
@@ -42,7 +43,7 @@ The player uses Web Audio API oscillator synthesis to generate music in real-tim
 | Generator | `generator.ts` | Orchestrates song creation and audio scheduling |
 | Mixer | `mixer.ts` | Dual-deck routing and crossfade transitions |
 | Synths | `synths.ts` | Oscillator-based synthesis primitives |
-| Patterns | `patterns.ts` | Generates melody, bass, drums, arpeggio, pad patterns |
+| Patterns | `patterns.ts` | Generates melody, bass, drums, arpeggio, pad, FX patterns |
 | Mood | `mood.ts` | Analyzes page content to determine genre |
 | Genres | `genres.ts` | Genre definitions with synthesis parameters |
 | Structures | `structures.ts` | Song structures (verse-chorus, build-drop, ambient, etc.) |
@@ -296,6 +297,57 @@ Chaos (0-100, internally 0-1.0) affects multiple systems:
 - Chaos > 80%: +0.4 energy, +0.2 brightness
 - Chaos 60-80%: +0.25 energy
 - High chaos biases toward more energetic genres
+
+---
+
+## FX & Risers
+
+### ELI5
+
+Ever notice how EDM songs build up tension before the beat drops? That "WHOOOOSH" sound getting higher and higher? That's a riser. The robot DJ adds these automatically before big moments. When the drop hits, there's a big BOOM impact. It's like the music is taking a deep breath before screaming.
+
+### Technical
+
+FX are non-melodic audio events that add tension and punctuation to section transitions. Unlike other tracks, they're noise-based synthesis rather than pitched notes.
+
+**FX Types (`types.ts`):**
+
+| Type | Description |
+|------|-------------|
+| `riser` | White noise with rising bandpass filter sweep |
+| `downlifter` | Descending lowpass sweep after drops |
+| `impact` | Low thump + noise burst on downbeat |
+| `reverseCymbal` | Noise with quadratic fade-in envelope |
+| `sweep` | Detuned sawtooth oscillators with filter sweep |
+
+**Pattern Generation (`patterns.ts`):**
+- Breakdowns get risers or reverse cymbals building to the next section
+- Drops get impact hits on the first beat, optional downlifters after
+- EDM genres (techno, trance, happycore) favor noise risers
+- Chill genres (ambient, lofi, vaporwave) favor reverse cymbals and sweeps
+- FX intensity scales with section energy
+
+**Synthesis (`synths.ts`):**
+```
+Riser:    NoiseBuffer → BandpassFilter (200Hz→12kHz sweep) → Gain (crescendo)
+Impact:   SineOsc (80→30Hz pitch drop) + NoiseBuffer (HP 2kHz) → triggers sidechain
+Sweep:    2x SawOsc (detuned) → BandpassFilter (up/down sweep) → Gain
+```
+
+**Section Handling (`patterns.ts`):**
+
+| Section Type | FX Generated |
+|--------------|--------------|
+| `breakdown` | Riser or reverse cymbal building to end |
+| `drop` | Impact on downbeat, optional downlifter |
+| `intro` | Reverse cymbal building into the song |
+| `chorus` | Impact on downbeat (energy >= 0.8 only) |
+
+**Section Defaults (`structures.ts`):**
+- `hasFX` auto-enabled for `breakdown` and `drop` section types
+- Other sections opt-in explicitly (e.g., EDM intros, high-energy choruses)
+
+**Note:** FX are audio-only - they're not included in MIDI export since they're synthesized noise, not pitched notes.
 
 ---
 

@@ -179,7 +179,9 @@ export const scoring = {
 			if (e.target === resetBtn) return;
 			startDrag(e.clientX, e.clientY);
 		});
-		document.addEventListener("mousemove", (e) => moveDrag(e.clientX, e.clientY));
+		document.addEventListener("mousemove", (e) =>
+			moveDrag(e.clientX, e.clientY),
+		);
 		document.addEventListener("mouseup", endDrag);
 
 		// Touch events

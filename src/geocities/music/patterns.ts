@@ -2,6 +2,8 @@ import { drumPatterns, STEPS_PER_BAR } from "./data";
 import type {
 	ArpPatternType,
 	BassPatternType,
+	FXNote,
+	FXType,
 	Genre,
 	GenreType,
 	MelodyNote,
@@ -1493,6 +1495,7 @@ export function generatePattern(params: PatternParams): Pattern {
 		drums: [],
 		arpeggio: [],
 		pad: [],
+		fx: [],
 		delayAmount,
 		filterCutoff,
 		rhythmVariation,
@@ -2368,5 +2371,130 @@ export function generatePattern(params: PatternParams): Pattern {
 		}
 	}
 
+	// Generate FX (risers, impacts, sweeps) for transitions
+	if (section.hasFX) {
+		const fxNotes = generateFX(section, genre, bars);
+		pattern.fx.push(...fxNotes);
+	}
+
 	return pattern;
+}
+
+/**
+ * Generate FX events for a section.
+ * - Breakdowns: risers/reverse cymbals building to the next section
+ * - Drops: impacts on the downbeat
+ * - Intros: reverse cymbal building into the song
+ * - Choruses: impact for punch (high energy only)
+ */
+function generateFX(section: Section, genre: Genre, bars: number): FXNote[] {
+	const fx: FXNote[] = [];
+	const totalSteps = bars * STEPS_PER_BAR;
+
+	// FX preferences by genre
+	const isEDM =
+		genre.name === "techno" ||
+		genre.name === "trance" ||
+		genre.name === "happycore";
+	const isChillGenre =
+		genre.name === "ambient" ||
+		genre.name === "lofi" ||
+		genre.name === "vaporwave";
+
+	if (section.type === "breakdown") {
+		// Breakdowns: build tension for the upcoming drop
+
+		if (bars >= 4) {
+			// Long breakdown: riser spanning most of the section
+			const riserType: FXType = isEDM
+				? T.pick(["riser", "riser", "reverseCymbal"])
+				: T.pick(["reverseCymbal", "sweep"]);
+
+			// Start riser partway through, building to the end
+			const riserStart = Math.floor(bars / 2) * STEPS_PER_BAR;
+			const riserDuration = totalSteps - riserStart;
+
+			fx.push({
+				step: riserStart,
+				type: riserType,
+				duration: riserDuration,
+				intensity: section.energy,
+			});
+		} else if (bars >= 2) {
+			// Short breakdown: quick riser in the last bar
+			const riserType: FXType = isEDM ? "riser" : "reverseCymbal";
+			fx.push({
+				step: (bars - 1) * STEPS_PER_BAR,
+				type: riserType,
+				duration: STEPS_PER_BAR,
+				intensity: section.energy * 0.8,
+			});
+		}
+
+		// Optional: add a sweep in the first half for extra movement
+		if (bars >= 4 && Math.random() < 0.4 && !isChillGenre) {
+			fx.push({
+				step: 0,
+				type: "sweep",
+				duration: STEPS_PER_BAR * 2,
+				intensity: section.energy * 0.5,
+			});
+		}
+	} else if (section.type === "drop") {
+		// Drops: impact on the downbeat, optional downlifter later
+
+		fx.push({
+			step: 0,
+			type: "impact",
+			duration: STEPS_PER_BAR / 2,
+			intensity: section.energy,
+		});
+
+		// Optional downlifter after the initial impact settles
+		if (bars >= 4 && Math.random() < 0.5 && isEDM) {
+			fx.push({
+				step: STEPS_PER_BAR * 2,
+				type: "downlifter",
+				duration: STEPS_PER_BAR * 2,
+				intensity: section.energy * 0.6,
+			});
+		}
+
+		// For very high energy, add a second impact mid-drop
+		if (bars >= 8 && section.energy > 0.8 && Math.random() < 0.3) {
+			fx.push({
+				step: Math.floor(bars / 2) * STEPS_PER_BAR,
+				type: "impact",
+				duration: STEPS_PER_BAR / 2,
+				intensity: section.energy * 0.7,
+			});
+		}
+	} else if (section.type === "intro") {
+		// Intros: reverse cymbal building into the song
+		if (bars >= 4) {
+			fx.push({
+				step: (bars - 2) * STEPS_PER_BAR,
+				type: "reverseCymbal",
+				duration: STEPS_PER_BAR * 2,
+				intensity: 0.6,
+			});
+		} else if (bars >= 2) {
+			fx.push({
+				step: (bars - 1) * STEPS_PER_BAR,
+				type: "reverseCymbal",
+				duration: STEPS_PER_BAR,
+				intensity: 0.5,
+			});
+		}
+	} else if (section.type === "chorus" && section.energy >= 0.8) {
+		// High-energy choruses: impact on downbeat for punch
+		fx.push({
+			step: 0,
+			type: "impact",
+			duration: STEPS_PER_BAR / 2,
+			intensity: section.energy * 0.7,
+		});
+	}
+
+	return fx;
 }

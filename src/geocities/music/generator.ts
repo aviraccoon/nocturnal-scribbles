@@ -37,6 +37,7 @@ import {
 	playArp,
 	playBass,
 	playDrum,
+	playFX,
 	playNote,
 	playPad,
 	setSynthContext,
@@ -55,6 +56,7 @@ import type {
 	SectionState,
 	Song,
 	SongStructure,
+	TrackType,
 	VisualState,
 } from "./types";
 
@@ -168,6 +170,7 @@ const trackMutes = {
 	drums: false,
 	arpeggio: false,
 	pad: false,
+	fx: false,
 };
 
 /** Pick a random value within a [min, max] range */
@@ -1032,6 +1035,16 @@ function scheduleNotesForDeck(deckId: DeckId, isOutgoing: boolean): boolean {
 			}
 		}
 
+		// Schedule FX (risers, impacts, sweeps)
+		if (!trackMutes.fx) {
+			for (const f of pattern.fx) {
+				if (f.step === step) {
+					const fxDuration = f.duration * secondsPerStep;
+					playFX(f.type, deck.nextNoteTime, fxDuration, f.intensity);
+				}
+			}
+		}
+
 		deck.nextNoteTime += secondsPerStep;
 		deck.sectionStep++;
 
@@ -1489,16 +1502,11 @@ export function getLoopEnabled(): boolean {
 }
 
 // Track muting
-export function setTrackMute(
-	track: "melody" | "bass" | "drums" | "arpeggio" | "pad",
-	muted: boolean,
-) {
+export function setTrackMute(track: TrackType, muted: boolean) {
 	trackMutes[track] = muted;
 }
 
-export function getTrackMute(
-	track: "melody" | "bass" | "drums" | "arpeggio" | "pad",
-): boolean {
+export function getTrackMute(track: TrackType): boolean {
 	return trackMutes[track];
 }
 
@@ -1652,6 +1660,7 @@ export function getCurrentSectionInfo(): SectionState | null {
 			drums: section.hasDrums,
 			arpeggio: section.hasArpeggio,
 			pad: section.hasPad,
+			fx: section.hasFX,
 		},
 	};
 }

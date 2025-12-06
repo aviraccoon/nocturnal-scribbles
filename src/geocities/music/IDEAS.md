@@ -24,6 +24,19 @@ Physical dial UI to tune between stations. Static between frequencies. Signal cl
 
 ## Sound Design
 
+### New Tracks / Layers
+
+- **Texture/Atmosphere Layer** - Ambient background sounds:
+  - Rain/nature for ambient genre
+  - Crowd atmosphere for rave structures
+  - Tape warble for vaporwave (beyond just detuning)
+  - Room tone / air
+
+- **Lead/Hook Synth** - Separate from melody track:
+  - Higher octave, brighter timbre for drops
+  - Distinct hook patterns during high-energy sections
+  - Currently melody does everything
+
 ### New Instruments
 
 - **Vocoder Chords** - Robot voice pad sounds
@@ -59,6 +72,20 @@ Physical dial UI to tune between stations. Static between frequencies. Signal cl
 ---
 
 ## Musical Content
+
+### Pattern Enhancements
+
+- **Rhythmic Pads / Chord Stabs** - Pads are currently always sustained whole-bar chords:
+  - Staccato chord stabs (house/disco style)
+  - Pumping sidechained chords
+  - Offbeat chord hits
+  - Filter sweeps on pad sustains
+
+- **Multi-Bar Builds** - Fills only happen on last bar of sections:
+  - 4-8 bar tension builds before drops
+  - Accelerating snare patterns across multiple bars
+  - Filter sweeps spanning breakdown sections
+  - Energy ramps instead of sudden transitions
 
 ### Melody Patterns (Future)
 
@@ -280,8 +307,10 @@ No user tracking required - all based on time, input, or page content.
 
 ### Do Next (High Impact)
 - Song seed for sharing
+- Rhythmic pads / chord stabs - easy pattern variation
 
 ### Do Eventually (Medium Impact)
+- Multi-bar builds before drops
 - Portamento on leads
 - More visualizer modes
 - Reverb effect
@@ -289,6 +318,7 @@ No user tracking required - all based on time, input, or page content.
 - Wow and flutter for lofi
 - Station special effects (PIRATE RADIO glitches, THE VOID processing)
 - Time-locked stations
+- Texture/atmosphere layer
 
 ### Do Maybe (Fun but Effort)
 - Skin system

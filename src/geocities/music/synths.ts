@@ -1,4 +1,4 @@
-import type { Song } from "./types";
+import type { FXType, Song } from "./types";
 
 const T = window.ThemeUtils;
 
@@ -999,5 +999,214 @@ export function playDrum(
 
 		// Trigger sidechain with longer release for that pumping feel
 		triggerSidechain(startTime, 0.6 * velocity);
+	}
+}
+
+/**
+ * Play FX sounds (risers, impacts, sweeps) for transitions and builds.
+ * These add tension before drops and punctuation on section changes.
+ */
+export function playFX(
+	type: FXType,
+	startTime: number,
+	duration: number,
+	intensity = 0.7,
+) {
+	if (!ctx) return;
+	const c = ctx;
+	const output = getOutput();
+	if (!output) return;
+
+	switch (type) {
+		case "riser": {
+			// White noise with rising filter sweep - builds tension before drops
+			const bufferSize = Math.ceil(c.sampleRate * duration);
+			const buffer = c.createBuffer(1, bufferSize, c.sampleRate);
+			const data = buffer.getChannelData(0);
+			for (let i = 0; i < bufferSize; i++) {
+				data[i] = (Math.random() * 2 - 1) * 0.8;
+			}
+
+			const noise = c.createBufferSource();
+			noise.buffer = buffer;
+
+			const filter = c.createBiquadFilter();
+			filter.type = "bandpass";
+			filter.Q.value = 2 + intensity * 3;
+			// Sweep from low to high
+			filter.frequency.setValueAtTime(200, startTime);
+			filter.frequency.exponentialRampToValueAtTime(
+				4000 + intensity * 8000,
+				startTime + duration,
+			);
+
+			const gain = c.createGain();
+			// Crescendo: start quiet, get louder
+			gain.gain.setValueAtTime(0.01, startTime);
+			gain.gain.exponentialRampToValueAtTime(
+				0.15 * intensity,
+				startTime + duration * 0.9,
+			);
+			gain.gain.linearRampToValueAtTime(0.001, startTime + duration);
+
+			noise.connect(filter);
+			filter.connect(gain);
+			gain.connect(output);
+			noise.start(startTime);
+			noise.stop(startTime + duration);
+			break;
+		}
+
+		case "downlifter": {
+			// Descending sweep after a drop - releases tension
+			const bufferSize = Math.ceil(c.sampleRate * duration);
+			const buffer = c.createBuffer(1, bufferSize, c.sampleRate);
+			const data = buffer.getChannelData(0);
+			for (let i = 0; i < bufferSize; i++) {
+				data[i] = (Math.random() * 2 - 1) * 0.7;
+			}
+
+			const noise = c.createBufferSource();
+			noise.buffer = buffer;
+
+			const filter = c.createBiquadFilter();
+			filter.type = "lowpass";
+			filter.Q.value = 1 + intensity * 2;
+			// Sweep from high to low
+			filter.frequency.setValueAtTime(8000 + intensity * 6000, startTime);
+			filter.frequency.exponentialRampToValueAtTime(100, startTime + duration);
+
+			const gain = c.createGain();
+			// Start loud, fade out
+			gain.gain.setValueAtTime(0.12 * intensity, startTime);
+			gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
+
+			noise.connect(filter);
+			filter.connect(gain);
+			gain.connect(output);
+			noise.start(startTime);
+			noise.stop(startTime + duration);
+			break;
+		}
+
+		case "impact": {
+			// Big hit on downbeat - layered low thump + noise burst
+			// Low thump (sub-bass hit)
+			const osc = c.createOscillator();
+			const oscGain = c.createGain();
+			osc.type = "sine";
+			osc.frequency.setValueAtTime(80, startTime);
+			osc.frequency.exponentialRampToValueAtTime(30, startTime + 0.2);
+			oscGain.gain.setValueAtTime(0.4 * intensity, startTime);
+			oscGain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.4);
+			osc.connect(oscGain);
+			oscGain.connect(output);
+			osc.start(startTime);
+			osc.stop(startTime + 0.5);
+
+			// Noise burst (high-end transient)
+			const noiseBuffer = c.createBuffer(1, c.sampleRate * 0.15, c.sampleRate);
+			const noiseData = noiseBuffer.getChannelData(0);
+			for (let i = 0; i < noiseData.length; i++) {
+				noiseData[i] =
+					(Math.random() * 2 - 1) * Math.exp(-i / (c.sampleRate * 0.03));
+			}
+
+			const noise = c.createBufferSource();
+			noise.buffer = noiseBuffer;
+			const noiseFilter = c.createBiquadFilter();
+			noiseFilter.type = "highpass";
+			noiseFilter.frequency.value = 2000;
+			const noiseGain = c.createGain();
+			noiseGain.gain.setValueAtTime(0.2 * intensity, startTime);
+			noiseGain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.15);
+
+			noise.connect(noiseFilter);
+			noiseFilter.connect(noiseGain);
+			noiseGain.connect(output);
+			noise.start(startTime);
+			noise.stop(startTime + 0.15);
+
+			// Trigger hard sidechain duck for that pumping impact
+			triggerSidechain(startTime, 0.8 * intensity);
+			break;
+		}
+
+		case "reverseCymbal": {
+			// Reversed cymbal swell - classic tension builder
+			const bufferSize = Math.ceil(c.sampleRate * duration);
+			const buffer = c.createBuffer(1, bufferSize, c.sampleRate);
+			const data = buffer.getChannelData(0);
+			for (let i = 0; i < bufferSize; i++) {
+				// Noise with reversed envelope built into the samples
+				const env = (i / bufferSize) ** 2; // Quadratic fade in
+				data[i] = (Math.random() * 2 - 1) * env;
+			}
+
+			const noise = c.createBufferSource();
+			noise.buffer = buffer;
+
+			const filter = c.createBiquadFilter();
+			filter.type = "highpass";
+			filter.frequency.setValueAtTime(3000, startTime);
+			filter.frequency.linearRampToValueAtTime(6000, startTime + duration);
+			filter.Q.value = 0.5;
+
+			const gain = c.createGain();
+			gain.gain.setValueAtTime(0.001, startTime);
+			gain.gain.exponentialRampToValueAtTime(
+				0.18 * intensity,
+				startTime + duration * 0.95,
+			);
+			gain.gain.linearRampToValueAtTime(0.001, startTime + duration);
+
+			noise.connect(filter);
+			filter.connect(gain);
+			gain.connect(output);
+			noise.start(startTime);
+			noise.stop(startTime + duration);
+			break;
+		}
+
+		case "sweep": {
+			// Pure filter sweep on oscillator - wooshy transition sound
+			const osc = c.createOscillator();
+			const osc2 = c.createOscillator();
+			osc.type = "sawtooth";
+			osc2.type = "sawtooth";
+			osc.frequency.value = 80;
+			osc2.frequency.value = 80.5; // Slight detune for thickness
+
+			const filter = c.createBiquadFilter();
+			filter.type = "bandpass";
+			filter.Q.value = 8 + intensity * 6;
+			// Sweep up then down
+			const midTime = startTime + duration / 2;
+			filter.frequency.setValueAtTime(200, startTime);
+			filter.frequency.exponentialRampToValueAtTime(
+				2000 + intensity * 4000,
+				midTime,
+			);
+			filter.frequency.exponentialRampToValueAtTime(200, startTime + duration);
+
+			const gain = c.createGain();
+			gain.gain.setValueAtTime(0.001, startTime);
+			gain.gain.linearRampToValueAtTime(
+				0.08 * intensity,
+				startTime + duration * 0.3,
+			);
+			gain.gain.setValueAtTime(0.08 * intensity, startTime + duration * 0.7);
+			gain.gain.linearRampToValueAtTime(0.001, startTime + duration);
+
+			osc.connect(filter);
+			osc2.connect(filter);
+			filter.connect(gain);
+			gain.connect(output);
+			osc.start(startTime);
+			osc2.start(startTime);
+			osc.stop(startTime + duration + 0.1);
+			osc2.stop(startTime + duration + 0.1);
+			break;
+		}
 	}
 }

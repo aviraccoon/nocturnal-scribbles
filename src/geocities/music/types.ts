@@ -7,6 +7,9 @@ export type TimeSlot =
 	| "evening" // 5-9 PM - dark/energy drift
 	| "night"; // 9 PM-2 AM - dark drift
 
+/** Track types for muting and display */
+export type TrackType = "melody" | "bass" | "drums" | "arpeggio" | "pad" | "fx";
+
 export type VisualState = {
 	// Visual properties
 	dominantHue: number;
@@ -139,6 +142,21 @@ export type DrumHit = {
 	pitch?: number;
 };
 
+/** FX types for transitions and builds */
+export type FXType =
+	| "riser" // White noise sweep building up
+	| "downlifter" // Descending sweep after drop
+	| "impact" // Hit/explosion on downbeat
+	| "reverseCymbal" // Reversed cymbal swell
+	| "sweep"; // Filter sweep (no noise, just filter movement)
+
+export type FXNote = {
+	step: number; // When to start
+	type: FXType;
+	duration: number; // In steps
+	intensity: number; // 0-1, affects volume and filter range
+};
+
 export type ArpPatternType =
 	| "up"
 	| "down"
@@ -173,6 +191,7 @@ export type Pattern = {
 	drums: DrumHit[];
 	arpeggio: ArpeggioNote[];
 	pad: PadNote[];
+	fx: FXNote[];
 	delayAmount: number;
 	filterCutoff: number;
 	trackName?: string;
@@ -205,6 +224,7 @@ export type Section = {
 	hasDrums: boolean;
 	hasArpeggio: boolean;
 	hasPad: boolean;
+	hasFX: boolean;
 	// Energy level 0-1 affects density and velocity
 	energy: number;
 };
@@ -277,6 +297,7 @@ export type SectionState = {
 		drums: boolean;
 		arpeggio: boolean;
 		pad: boolean;
+		fx: boolean;
 	};
 };
 

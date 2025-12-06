@@ -6,6 +6,8 @@ function section(
 	bars: number,
 	opts: Partial<Omit<Section, "type" | "bars">> = {},
 ): Section {
+	// Auto-enable FX for breakdowns (builds tension for drops) and drops (impacts)
+	const autoFX = type === "breakdown" || type === "drop";
 	return {
 		type,
 		bars,
@@ -14,6 +16,7 @@ function section(
 		hasDrums: opts.hasDrums ?? true,
 		hasArpeggio: opts.hasArpeggio ?? false,
 		hasPad: opts.hasPad ?? false,
+		hasFX: opts.hasFX ?? autoFX,
 		energy: opts.energy ?? 0.6,
 	};
 }
@@ -51,7 +54,12 @@ const aaba: SongStructure = {
 const buildDrop: SongStructure = {
 	name: "Build-Drop",
 	sections: [
-		section("intro", 4, { hasDrums: false, hasPad: true, energy: 0.2 }),
+		section("intro", 4, {
+			hasDrums: false,
+			hasPad: true,
+			hasFX: true,
+			energy: 0.2,
+		}),
 		section("verse", 8, { hasDrums: true, energy: 0.5 }),
 		section("breakdown", 4, {
 			hasDrums: false,
@@ -102,10 +110,20 @@ const ambient: SongStructure = {
 const throughComposed: SongStructure = {
 	name: "Through-Composed",
 	sections: [
-		section("intro", 4, { hasDrums: false, hasPad: true, energy: 0.3 }),
+		section("intro", 4, {
+			hasDrums: false,
+			hasPad: true,
+			hasFX: true,
+			energy: 0.3,
+		}),
 		section("verse", 8, { energy: 0.5 }),
 		section("bridge", 8, { hasArpeggio: true, energy: 0.6 }),
-		section("chorus", 8, { hasArpeggio: true, hasPad: true, energy: 0.8 }),
+		section("chorus", 8, {
+			hasArpeggio: true,
+			hasPad: true,
+			hasFX: true,
+			energy: 0.8,
+		}),
 		section("breakdown", 4, {
 			hasDrums: false,
 			hasArpeggio: true,
@@ -132,7 +150,7 @@ const shortLoop: SongStructure = {
 const rave: SongStructure = {
 	name: "Rave",
 	sections: [
-		section("intro", 4, { hasDrums: true, energy: 0.6 }),
+		section("intro", 4, { hasDrums: true, hasFX: true, energy: 0.6 }),
 		section("drop", 8, { hasArpeggio: true, energy: 1.0 }),
 		section("breakdown", 4, {
 			hasDrums: false,
@@ -172,12 +190,18 @@ const epic: SongStructure = {
 			hasMelody: false,
 			hasDrums: false,
 			hasPad: true,
+			hasFX: true,
 			energy: 0.2,
 		}),
 		section("verse", 8, { hasDrums: false, hasPad: true, energy: 0.3 }),
 		section("verse", 8, { hasPad: true, energy: 0.5 }),
 		section("breakdown", 4, { hasArpeggio: true, hasPad: true, energy: 0.6 }),
-		section("chorus", 8, { hasArpeggio: true, hasPad: true, energy: 0.8 }),
+		section("chorus", 8, {
+			hasArpeggio: true,
+			hasPad: true,
+			hasFX: true,
+			energy: 0.8,
+		}),
 		section("drop", 8, { hasArpeggio: true, energy: 1.0 }),
 		section("outro", 4, { hasPad: true, energy: 0.4 }),
 	],
@@ -224,7 +248,12 @@ const rondo: SongStructure = {
 const breakdownHeavy: SongStructure = {
 	name: "Breakdown-Heavy",
 	sections: [
-		section("intro", 4, { hasDrums: false, hasPad: true, energy: 0.3 }),
+		section("intro", 4, {
+			hasDrums: false,
+			hasPad: true,
+			hasFX: true,
+			energy: 0.3,
+		}),
 		section("breakdown", 4, {
 			hasDrums: false,
 			hasArpeggio: true,
@@ -281,7 +310,12 @@ const drone: SongStructure = {
 const doubleDrop: SongStructure = {
 	name: "Double Drop",
 	sections: [
-		section("intro", 4, { hasDrums: false, hasPad: true, energy: 0.3 }),
+		section("intro", 4, {
+			hasDrums: false,
+			hasPad: true,
+			hasFX: true,
+			energy: 0.3,
+		}),
 		section("verse", 8, { energy: 0.5 }),
 		section("breakdown", 4, {
 			hasDrums: false,
