@@ -810,6 +810,29 @@ footer {
 		var(--btn-border-light) var(--btn-border-dark);
 }
 
+.music-toggle {
+	margin-top: 0.5rem;
+	font-size: 0.85rem;
+	color: var(--text-light);
+	display: flex;
+	justify-content: center;
+}
+
+.music-toggle label {
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	gap: 0.35rem;
+}
+
+.music-toggle input[type="checkbox"] {
+	cursor: pointer;
+}
+
+.music-toggle.hidden {
+	display: none;
+}
+
 /* Footnotes */
 .footnotes {
 	margin-top: 3rem;

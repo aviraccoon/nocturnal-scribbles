@@ -20,9 +20,6 @@ type PlayerMode = "tape" | "radio";
 export function addMusicPlayer(
 	statusBarOffsets = { top: 0, bottom: 0, left: 0, right: 0 },
 ) {
-	// 40% chance of showing player
-	if (Math.random() > 0.4) return;
-
 	const player = document.createElement("div");
 	player.className = "geocities-music-player tape-mode";
 

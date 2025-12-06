@@ -120,8 +120,10 @@ export function applyGeocitiesStyles() {
 	addFireEffect();
 	addMatrixRain();
 
-	// Music player
-	addMusicPlayer(statusBarOffsets);
+	// Music player (40% chance)
+	if (Math.random() < 0.4) {
+		addMusicPlayer(statusBarOffsets);
+	}
 
 	// Show score counter if user already has points
 	if (scoring.totalScore > 0) {

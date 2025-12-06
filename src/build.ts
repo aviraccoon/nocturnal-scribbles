@@ -10,7 +10,7 @@ import {
 	copyPublicFiles,
 	copyStaticWithHashing,
 } from "./assets";
-import { bundleGeocities, transpileScripts } from "./bundler";
+import { bundleGeocities, bundleMusic, transpileScripts } from "./bundler";
 import {
 	DIST_DIR,
 	PAGES_DIR,
@@ -75,6 +75,11 @@ export async function build(options: BuildOptions = {}) {
 	const geocitiesBundle = await bundleGeocities(staticDistDir);
 	assetMap[geocitiesBundle.originalPath] = geocitiesBundle.hashedPath;
 	console.log("Bundled geocities theme");
+
+	// Bundle standalone music player (lazy-loaded)
+	const musicBundle = await bundleMusic(staticDistDir);
+	assetMap[musicBundle.originalPath] = musicBundle.hashedPath;
+	console.log("Bundled music player");
 
 	// Copy public files to dist root (CNAME, robots.txt, etc.)
 	if (existsSync(publicDir)) {

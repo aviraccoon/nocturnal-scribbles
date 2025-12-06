@@ -30,6 +30,7 @@ declare global {
 	interface Window {
 		ThemeUtils: ThemeUtils;
 		applyGeocitiesTheme?: () => void;
+		addMusicPlayerStandalone?: () => void;
 		GeocitiesMusic?: GeocitiesMusic;
 	}
 }

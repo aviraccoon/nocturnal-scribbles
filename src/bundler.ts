@@ -19,7 +19,7 @@ type BundleResult = {
 export async function bundleGeocities(
 	distStaticDir: string,
 ): Promise<BundleResult> {
-	const entrypoint = join(import.meta.dir, "geocities/index.js");
+	const entrypoint = join(import.meta.dir, "geocities/index.ts");
 
 	const result = await Bun.build({
 		entrypoints: [entrypoint],
@@ -43,6 +43,41 @@ export async function bundleGeocities(
 
 	return {
 		originalPath: "/static/geocities.js",
+		hashedPath: `/static/${filename}`,
+	};
+}
+
+/**
+ * Bundles the standalone music player into a single minified file.
+ * Returns the hashed filename for asset mapping.
+ */
+export async function bundleMusic(
+	distStaticDir: string,
+): Promise<BundleResult> {
+	const entrypoint = join(import.meta.dir, "geocities/music-standalone.ts");
+
+	const result = await Bun.build({
+		entrypoints: [entrypoint],
+		outdir: distStaticDir,
+		naming: "music-[hash].[ext]",
+		minify: true,
+		target: "browser",
+		format: "iife",
+	});
+
+	if (!result.success) {
+		console.error("Bundle errors:", result.logs);
+		throw new Error("Failed to bundle music player");
+	}
+
+	const output = result.outputs[0];
+	if (!output) {
+		throw new Error("No output produced from music bundle");
+	}
+	const filename = basename(output.path);
+
+	return {
+		originalPath: "/static/music.js",
 		hashedPath: `/static/${filename}`,
 	};
 }

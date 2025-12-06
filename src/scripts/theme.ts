@@ -156,5 +156,70 @@ buttons.forEach((btn) => {
 		}
 		applyTheme(theme);
 		updateButtons(theme);
+		updateMusicToggleVisibility();
 	});
 });
+
+// Music player toggle (hidden when geocities theme is active)
+const musicToggleContainer = document.getElementById("music-toggle-container");
+const musicToggleCheckbox = document.getElementById(
+	"music-toggle",
+) as HTMLInputElement | null;
+let musicLoading: Promise<unknown> | null = null;
+let musicPlayerActive = false;
+
+function updateMusicToggleVisibility() {
+	if (!musicToggleContainer) return;
+	// Hide when geocities is active (it has its own player)
+	musicToggleContainer.classList.toggle("hidden", currentTheme === "geocities");
+}
+
+function loadMusicPlayer() {
+	if (window.addMusicPlayerStandalone) {
+		return Promise.resolve();
+	}
+	if (musicLoading) {
+		return musicLoading;
+	}
+	musicLoading = loadScript("/static/music.js");
+	return musicLoading;
+}
+
+function enableMusicPlayer() {
+	if (musicPlayerActive) return;
+	loadMusicPlayer()
+		.then(() => {
+			window.addMusicPlayerStandalone?.();
+			musicPlayerActive = true;
+		})
+		.catch((err) => {
+			console.error("Failed to load music player:", err);
+			if (musicToggleCheckbox) musicToggleCheckbox.checked = false;
+		});
+}
+
+// Initialize music toggle state
+updateMusicToggleVisibility();
+
+// Restore music preference (but not if geocities is active)
+if (musicToggleCheckbox) {
+	const musicEnabled = localStorage.getItem("musicPlayer") === "true";
+	musicToggleCheckbox.checked = musicEnabled;
+
+	if (musicEnabled && currentTheme !== "geocities") {
+		enableMusicPlayer();
+	}
+
+	musicToggleCheckbox.addEventListener("change", () => {
+		const enabled = musicToggleCheckbox.checked;
+
+		if (enabled) {
+			localStorage.setItem("musicPlayer", "true");
+			enableMusicPlayer();
+		} else {
+			localStorage.removeItem("musicPlayer");
+			// Reload to remove the player (it injects DOM elements)
+			location.reload();
+		}
+	});
+}
