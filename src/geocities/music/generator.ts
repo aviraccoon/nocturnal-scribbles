@@ -34,15 +34,14 @@ import { getPostAgeEffect } from "./mood";
 import { generatePattern } from "./patterns";
 import { getTotalBars, structures } from "./structures";
 import {
+	createSynthContext,
 	playArp,
 	playBass,
 	playDrum,
 	playFX,
 	playNote,
 	playPad,
-	setSynthContext,
-	setSynthOutput,
-	setSynthSong,
+	type SynthContext,
 } from "./synths";
 import { generateTrackName } from "./track-names";
 import type {
@@ -104,6 +103,7 @@ musicEvents.on("transitionComplete", () => {
 /** Playback state for a single deck */
 type DeckPlayback = {
 	song: Song | null;
+	synthContext: SynthContext | null;
 	sectionIndex: number;
 	sectionStep: number;
 	nextNoteTime: number;
@@ -113,6 +113,7 @@ type DeckPlayback = {
 function createEmptyDeckPlayback(): DeckPlayback {
 	return {
 		song: null,
+		synthContext: null,
 		sectionIndex: 0,
 		sectionStep: 0,
 		nextNoteTime: 0,
@@ -144,8 +145,10 @@ function getDeckPlayback(deckId: DeckId): DeckPlayback {
 
 /** Initialize the inactive deck with a song for transition overlap */
 function initIncomingDeck(song: Song, startDelay = 0): void {
+	const inactiveId = getActiveDeckId() === "A" ? "B" : "A";
 	const deck = getInactiveDeckPlayback();
 	deck.song = song;
+	deck.synthContext = createDeckSynthContext(inactiveId, song);
 	deck.sectionIndex = 0;
 	deck.sectionStep = 0;
 	deck.songEndingEmitted = false;
@@ -270,9 +273,6 @@ function getContext() {
 
 		// Initialize mixer for automix transitions
 		initMixer(ctx, masterGain);
-
-		// Initialize synth context
-		setSynthContext(ctx, masterGain, sidechainGain);
 	}
 	if (ctx.state === "suspended") {
 		ctx.resume();
@@ -306,13 +306,23 @@ function createBitcrusherCurve(bits: number): Float32Array<ArrayBuffer> | null {
 	return curve;
 }
 
+/** Create a synth context for a deck with its output routing */
+function createDeckSynthContext(deckId: DeckId, song: Song): SynthContext {
+	const output = getDeckOutput(deckId);
+	if (!output) {
+		throw new Error(`Deck ${deckId} has no output - mixer not initialized`);
+	}
+	return createSynthContext(getContext(), output, song, sidechainGain);
+}
+
 /**
  * Internal helper to load a song after transitioning (used by automix and ad breaks).
  */
 function loadSongInternal(song: Song) {
+	const deckId = getActiveDeckId();
 	const deck = getActiveDeckPlayback();
 	deck.song = song;
-	setSynthSong(song);
+	deck.synthContext = createDeckSynthContext(deckId, song);
 	deck.sectionIndex = 0;
 	deck.sectionStep = 0;
 	deck.songEndingEmitted = false;
@@ -954,7 +964,8 @@ function getSectionForDeck(
 function scheduleNotesForDeck(deckId: DeckId, isOutgoing: boolean): boolean {
 	const deck = getDeckPlayback(deckId);
 	const song = deck.song;
-	if (!song) return false;
+	const synth = deck.synthContext;
+	if (!song || !synth) return false;
 
 	const current = getSectionForDeck(deck);
 	if (!current) return false;
@@ -962,9 +973,6 @@ function scheduleNotesForDeck(deckId: DeckId, isOutgoing: boolean): boolean {
 	const c = getContext();
 	const secondsPerStep = 60 / song.tempo / 4;
 	const scheduleAhead = 0.1;
-
-	// Route synth output through this deck
-	setSynthOutput(getDeckOutput(deckId));
 
 	let scheduled = false;
 
@@ -990,7 +998,7 @@ function scheduleNotesForDeck(deckId: DeckId, isOutgoing: boolean): boolean {
 						swingOffset +
 						getHumanizeOffset(secondsPerStep) * (1 + chaosHumanize);
 					const velocityHuman = (n.velocity || 1) * (0.9 + Math.random() * 0.2);
-					playNote(noteToFreq(n.note), noteTime, duration, {
+					playNote(synth, noteToFreq(n.note), noteTime, duration, {
 						type: T.pick(song.genre.oscTypes.melody),
 						volume: 0.1 * velocityHuman,
 						detune: chaosDetune,
@@ -1009,7 +1017,12 @@ function scheduleNotesForDeck(deckId: DeckId, isOutgoing: boolean): boolean {
 			for (const n of pattern.bass) {
 				if (n.step === step) {
 					const noteTime = deck.nextNoteTime + swingOffset;
-					playBass(noteToFreq(n.note), noteTime, n.duration * secondsPerStep);
+					playBass(
+						synth,
+						noteToFreq(n.note),
+						noteTime,
+						n.duration * secondsPerStep,
+					);
 				}
 			}
 		}
@@ -1022,7 +1035,12 @@ function scheduleNotesForDeck(deckId: DeckId, isOutgoing: boolean): boolean {
 						deck.nextNoteTime +
 						swingOffset +
 						getHumanizeOffset(secondsPerStep) * (1 + chaosHumanize);
-					playArp(noteToFreq(n.note), noteTime, n.duration * secondsPerStep);
+					playArp(
+						synth,
+						noteToFreq(n.note),
+						noteTime,
+						n.duration * secondsPerStep,
+					);
 				}
 			}
 		}
@@ -1031,7 +1049,12 @@ function scheduleNotesForDeck(deckId: DeckId, isOutgoing: boolean): boolean {
 		if (!trackMutes.pad) {
 			for (const p of pattern.pad) {
 				if (p.step === step) {
-					playPad(p.notes, deck.nextNoteTime, p.duration * secondsPerStep);
+					playPad(
+						synth,
+						p.notes,
+						deck.nextNoteTime,
+						p.duration * secondsPerStep,
+					);
 				}
 			}
 		}
@@ -1046,7 +1069,7 @@ function scheduleNotesForDeck(deckId: DeckId, isOutgoing: boolean): boolean {
 						: deck.nextNoteTime;
 					const velocityHuman =
 						(d.velocity || 1) * (0.92 + Math.random() * 0.16);
-					playDrum(d.type, drumTime, velocityHuman, d.pitch ?? null);
+					playDrum(synth, d.type, drumTime, velocityHuman, d.pitch ?? null);
 				}
 			}
 		}
@@ -1056,7 +1079,7 @@ function scheduleNotesForDeck(deckId: DeckId, isOutgoing: boolean): boolean {
 			for (const f of pattern.fx) {
 				if (f.step === step) {
 					const fxDuration = f.duration * secondsPerStep;
-					playFX(f.type, deck.nextNoteTime, fxDuration, f.intensity);
+					playFX(synth, f.type, deck.nextNoteTime, fxDuration, f.intensity);
 				}
 			}
 		}
@@ -1126,7 +1149,7 @@ function scheduleNotesForDeck(deckId: DeckId, isOutgoing: boolean): boolean {
 						// Apply effects for the new song
 						const newDeck = getActiveDeckPlayback();
 						if (newDeck.song) {
-							setSynthSong(newDeck.song);
+							// synthContext already set in initIncomingDeck
 							if (delayNode && delayFeedback) {
 								delayNode.delayTime.value = 60 / newDeck.song.tempo / 2;
 								delayFeedback.gain.value = newDeck.song.delayAmount;
@@ -1298,7 +1321,7 @@ export function generate() {
 	const song = generateSong(visualState);
 	const deck = getActiveDeckPlayback();
 	deck.song = song;
-	setSynthSong(song);
+	// synthContext is created lazily in play() after mixer is initialized
 	deck.sectionIndex = 0;
 	deck.sectionStep = 0;
 	deck.songEndingEmitted = false;
@@ -1339,17 +1362,19 @@ export function nextTrack() {
 		// Skip non-song items (breaks)
 	}
 
+	const deckId = getActiveDeckId();
+
 	if (nextSong) {
 		// Start and immediately finish transition for manual skip
 		startTransition({ kind: "song", song: nextSong }, true);
 		finishTransition();
 		deck.song = nextSong;
-		setSynthSong(nextSong);
+		deck.synthContext = createDeckSynthContext(deckId, nextSong);
 	} else {
 		// Generate new song
 		const visualState = sampleVisualState();
 		deck.song = generateSong(visualState);
-		setSynthSong(deck.song);
+		deck.synthContext = createDeckSynthContext(deckId, deck.song);
 
 		// Maybe queue a break before next song
 		const breakItem = shouldTriggerBreak(playerMode);
@@ -1401,9 +1426,15 @@ export function play() {
 	if (isPlaying) return;
 	const deck = getActiveDeckPlayback();
 	if (!deck.song) generate();
-	const c = getContext();
+	const c = getContext(); // Initializes mixer
 	const currentSong = deck.song;
 	if (!currentSong || !masterGain) return;
+
+	// Create synthContext now that mixer is initialized
+	const deckId = getActiveDeckId();
+	if (!deck.synthContext) {
+		deck.synthContext = createDeckSynthContext(deckId, currentSong);
+	}
 
 	// Apply song-specific effects
 	if (delayNode && delayFeedback) {

@@ -627,11 +627,31 @@ Want to keep your procedural masterpiece? The robot can record the whole song an
 
 **WAV Export (`recorder.ts`):**
 1. Uses `OfflineAudioContext` (44.1 kHz stereo)
-2. `renderSongToBuffer()` synthesizes entire song in background
-3. Chunked processing with `yieldToMain()` to avoid blocking UI
-4. Recreates full synthesis chain in offline context
+2. Uses shared `SynthContext` and synth functions from `synths.ts`
+3. Produces identical output to live playback (same genre synthesis, portamento, wow/flutter, PWM, FX)
+4. Chunked processing with `yieldToMain()` to avoid blocking UI
 5. Progress callbacks for UI updates
 6. Downloads as WAV file
+
+**Shared Synthesis Architecture:**
+
+The synth functions are shared between live playback and offline export via `SynthContext`:
+
+```typescript
+type SynthContext = {
+  ctx: BaseAudioContext;      // AudioContext or OfflineAudioContext
+  output: AudioNode;          // Where to route audio
+  sidechain: GainNode | null; // For kick ducking (null for offline)
+  song: Song;                 // Genre-specific parameters
+  state: { lastMelodyFreq: number | null }; // Portamento tracking
+};
+```
+
+This ensures WAV exports include all synthesis features:
+- Genre-specific bass, pad, arp, and drum sounds
+- Portamento, wow/flutter, and PWM for melody
+- FX (risers, impacts, sweeps)
+- Full drum kit (kick, snare, hihat, tom, crash, cowbell, clap, etc.)
 
 **MIDI Export (`midi.ts`):**
 - Standard MIDI file (Type 1, multi-track)
@@ -661,7 +681,7 @@ The suffix makes it easy to sort/filter exports by genre or structure type.
 | `mood.ts` | Page analysis, mood mapping |
 | `genres.ts` | Genre definitions with synthesis parameters |
 | `patterns.ts` | Pattern generation |
-| `synths.ts` | Oscillator synthesis |
+| `synths.ts` | Shared synthesis (live + offline via SynthContext) |
 | `structures.ts` | Song structure definitions |
 | `radio.ts` | Station/DJ/commercial logic |
 | `radio-data.ts` | Station definitions, commercials, guestbook entries |

@@ -1,4 +1,13 @@
 import { STEPS_PER_BAR } from "./data";
+import {
+	createSynthContext,
+	playArp,
+	playBass,
+	playDrum,
+	playFX,
+	playNote,
+	playPad,
+} from "./synths";
 import type { Song } from "./types";
 
 const T = window.ThemeUtils;
@@ -10,9 +19,13 @@ function yieldToMain(): Promise<void> {
 	return new Promise((resolve) => setTimeout(resolve, 0));
 }
 
+function noteToFreq(note: number) {
+	return 261.63 * 2 ** (note / 12);
+}
+
 /**
  * Render a song to an audio buffer using OfflineAudioContext.
- * Uses chunked processing to avoid blocking the main thread.
+ * Uses the same synth functions as live playback for identical output.
  */
 export async function renderSongToBuffer(
 	song: Song,
@@ -61,251 +74,9 @@ export async function renderSongToBuffer(
 	delayNode.connect(effectsGain);
 	effectsGain.connect(ctx.destination);
 
-	// Helper functions for synthesis
-	function noteToFreq(note: number) {
-		return 261.63 * 2 ** (note / 12);
-	}
-
-	function scheduleNote(
-		freq: number,
-		startTime: number,
-		duration: number,
-		type: OscillatorType,
-		volume: number,
-	) {
-		const osc = ctx.createOscillator();
-		const gain = ctx.createGain();
-		osc.type = type;
-		osc.frequency.setValueAtTime(freq, startTime);
-
-		gain.gain.setValueAtTime(0, startTime);
-		gain.gain.linearRampToValueAtTime(volume, startTime + 0.01);
-		gain.gain.setValueAtTime(volume * 0.8, startTime + duration * 0.3);
-		gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
-
-		osc.connect(gain);
-		gain.connect(masterGain);
-		osc.start(startTime);
-		osc.stop(startTime + duration + 0.1);
-	}
-
-	function scheduleBass(freq: number, startTime: number, duration: number) {
-		const osc = ctx.createOscillator();
-		const gain = ctx.createGain();
-		const filter = ctx.createBiquadFilter();
-
-		osc.type = "sawtooth";
-		osc.frequency.setValueAtTime(freq, startTime);
-
-		filter.type = "lowpass";
-		filter.frequency.setValueAtTime(2000, startTime);
-		filter.frequency.exponentialRampToValueAtTime(
-			200,
-			startTime + duration * 0.8,
-		);
-		filter.Q.value = 2;
-
-		gain.gain.setValueAtTime(0, startTime);
-		gain.gain.linearRampToValueAtTime(0.15, startTime + 0.02);
-		gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
-
-		osc.connect(filter);
-		filter.connect(gain);
-		gain.connect(masterGain);
-		osc.start(startTime);
-		osc.stop(startTime + duration + 0.1);
-	}
-
-	function schedulePad(notes: number[], startTime: number, duration: number) {
-		for (const note of notes) {
-			const freq = noteToFreq(note);
-			const osc = ctx.createOscillator();
-			const gain = ctx.createGain();
-
-			osc.type = "sine";
-			osc.frequency.setValueAtTime(freq, startTime);
-
-			const attackTime = Math.min(0.5, duration * 0.2);
-			gain.gain.setValueAtTime(0, startTime);
-			gain.gain.linearRampToValueAtTime(0.04, startTime + attackTime);
-			gain.gain.setValueAtTime(0.04, startTime + duration * 0.7);
-			gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
-
-			osc.connect(gain);
-			gain.connect(masterGain);
-			osc.start(startTime);
-			osc.stop(startTime + duration + 0.2);
-		}
-	}
-
-	function scheduleDrum(
-		type: string,
-		startTime: number,
-		velocity: number,
-		pitch: number | null,
-	) {
-		if (type === "kick") {
-			const osc = ctx.createOscillator();
-			const gain = ctx.createGain();
-			osc.type = "sine";
-			osc.frequency.setValueAtTime(150, startTime);
-			osc.frequency.exponentialRampToValueAtTime(30, startTime + 0.1);
-			gain.gain.setValueAtTime(0.5 * velocity, startTime);
-			gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.25);
-			osc.connect(gain);
-			gain.connect(masterGain);
-			osc.start(startTime);
-			osc.stop(startTime + 0.25);
-		} else if (type === "snare") {
-			const osc = ctx.createOscillator();
-			const oscGain = ctx.createGain();
-			osc.type = "triangle";
-			osc.frequency.setValueAtTime(180, startTime);
-			osc.frequency.exponentialRampToValueAtTime(100, startTime + 0.05);
-			oscGain.gain.setValueAtTime(0.2 * velocity, startTime);
-			oscGain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.1);
-			osc.connect(oscGain);
-			oscGain.connect(masterGain);
-			osc.start(startTime);
-			osc.stop(startTime + 0.1);
-
-			// Noise
-			const bufferSize = sampleRate * 0.15;
-			const buffer = ctx.createBuffer(1, bufferSize, sampleRate);
-			const data = buffer.getChannelData(0);
-			for (let i = 0; i < bufferSize; i++) {
-				data[i] = Math.random() * 2 - 1;
-			}
-			const noise = ctx.createBufferSource();
-			noise.buffer = buffer;
-			const noiseGain = ctx.createGain();
-			const filter = ctx.createBiquadFilter();
-			filter.type = "highpass";
-			filter.frequency.value = 1500;
-			noiseGain.gain.setValueAtTime(0.25 * velocity, startTime);
-			noiseGain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.15);
-			noise.connect(filter);
-			filter.connect(noiseGain);
-			noiseGain.connect(masterGain);
-			noise.start(startTime);
-			noise.stop(startTime + 0.15);
-		} else if (type === "hihat" || type === "hihatOpen") {
-			const isOpen = type === "hihatOpen";
-			const dur = isOpen ? 0.2 : 0.05;
-			const bufferSize = sampleRate * dur;
-			const buffer = ctx.createBuffer(1, bufferSize, sampleRate);
-			const data = buffer.getChannelData(0);
-			for (let i = 0; i < bufferSize; i++) {
-				data[i] = Math.random() * 2 - 1;
-			}
-			const noise = ctx.createBufferSource();
-			noise.buffer = buffer;
-			const noiseGain = ctx.createGain();
-			const filter = ctx.createBiquadFilter();
-			filter.type = "highpass";
-			filter.frequency.value = isOpen ? 7000 : 9000;
-			noiseGain.gain.setValueAtTime(0.08 * velocity, startTime);
-			noiseGain.gain.exponentialRampToValueAtTime(0.001, startTime + dur);
-			noise.connect(filter);
-			filter.connect(noiseGain);
-			noiseGain.connect(masterGain);
-			noise.start(startTime);
-			noise.stop(startTime + dur);
-		} else if (type === "tom") {
-			const freq = pitch || 150;
-			const osc = ctx.createOscillator();
-			const gain = ctx.createGain();
-			osc.type = "sine";
-			osc.frequency.setValueAtTime(freq, startTime);
-			osc.frequency.exponentialRampToValueAtTime(freq * 0.5, startTime + 0.15);
-			gain.gain.setValueAtTime(0.3 * velocity, startTime);
-			gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.2);
-			osc.connect(gain);
-			gain.connect(masterGain);
-			osc.start(startTime);
-			osc.stop(startTime + 0.2);
-		} else if (type === "crash") {
-			const bufferSize = sampleRate * 0.8;
-			const buffer = ctx.createBuffer(1, bufferSize, sampleRate);
-			const data = buffer.getChannelData(0);
-			for (let i = 0; i < bufferSize; i++) {
-				data[i] = Math.random() * 2 - 1;
-			}
-			const noise = ctx.createBufferSource();
-			noise.buffer = buffer;
-			const noiseGain = ctx.createGain();
-			const filter = ctx.createBiquadFilter();
-			filter.type = "highpass";
-			filter.frequency.value = 5000;
-			noiseGain.gain.setValueAtTime(0.15, startTime);
-			noiseGain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.8);
-			noise.connect(filter);
-			filter.connect(noiseGain);
-			noiseGain.connect(masterGain);
-			noise.start(startTime);
-			noise.stop(startTime + 0.8);
-		} else if (type === "cowbell") {
-			// 808-style cowbell
-			const osc1 = ctx.createOscillator();
-			const osc2 = ctx.createOscillator();
-			const gain = ctx.createGain();
-			const filter = ctx.createBiquadFilter();
-
-			osc1.type = "square";
-			osc2.type = "square";
-			osc1.frequency.setValueAtTime(800, startTime);
-			osc2.frequency.setValueAtTime(540, startTime);
-
-			filter.type = "bandpass";
-			filter.frequency.value = 800;
-			filter.Q.value = 3;
-
-			gain.gain.setValueAtTime(0.3 * velocity, startTime);
-			gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.08);
-
-			osc1.connect(filter);
-			osc2.connect(filter);
-			filter.connect(gain);
-			gain.connect(masterGain);
-
-			osc1.start(startTime);
-			osc2.start(startTime);
-			osc1.stop(startTime + 0.08);
-			osc2.stop(startTime + 0.08);
-		} else if (type === "clap") {
-			// Layered noise for clap
-			const numLayers = 4;
-			for (let layer = 0; layer < numLayers; layer++) {
-				const delay = layer * 0.01;
-				const bufferSize = sampleRate * 0.1;
-				const buffer = ctx.createBuffer(1, bufferSize, sampleRate);
-				const data = buffer.getChannelData(0);
-				for (let i = 0; i < bufferSize; i++) {
-					data[i] = Math.random() * 2 - 1;
-				}
-				const noise = ctx.createBufferSource();
-				noise.buffer = buffer;
-				const noiseGain = ctx.createGain();
-				const filter = ctx.createBiquadFilter();
-				filter.type = "bandpass";
-				filter.frequency.value = 1500 + Math.random() * 500;
-				filter.Q.value = 1;
-
-				const layerVol = (0.15 * velocity) / numLayers;
-				noiseGain.gain.setValueAtTime(layerVol, startTime + delay);
-				noiseGain.gain.exponentialRampToValueAtTime(
-					0.001,
-					startTime + delay + 0.08,
-				);
-
-				noise.connect(filter);
-				filter.connect(noiseGain);
-				noiseGain.connect(masterGain);
-				noise.start(startTime + delay);
-				noise.stop(startTime + delay + 0.1);
-			}
-		}
-	}
+	// Create synth context for shared synthesis
+	// Note: sidechain is null for offline rendering (no ducking needed)
+	const synth = createSynthContext(ctx, masterGain, song, null);
 
 	// Schedule all sections with progress updates
 	let currentTime = 0;
@@ -326,42 +97,56 @@ export async function renderSongToBuffer(
 
 		const sectionSteps = section.bars * STEPS_PER_BAR;
 
-		// Schedule all notes in this pattern
+		// Schedule melody notes with all synth enhancements
 		for (const n of pattern.melody) {
 			const noteTime = currentTime + n.step * secondsPerStep;
-			scheduleNote(
-				noteToFreq(n.note),
-				noteTime,
-				n.duration * secondsPerStep,
-				T.pick(song.genre.oscTypes.melody),
-				0.1 * (n.velocity || 1),
-			);
+			const noteDuration = n.duration * secondsPerStep;
+			playNote(synth, noteToFreq(n.note), noteTime, noteDuration, {
+				type: T.pick(song.genre.oscTypes.melody),
+				volume: 0.1 * (n.velocity || 1),
+				detune: song.detune,
+				attack: song.attack,
+				vibrato: noteDuration > 0.4,
+				portamento: song.portamento,
+				wowFlutter: song.wowFlutter,
+				pwmDepth: song.pwmDepth,
+			});
 		}
 
+		// Schedule bass with genre-specific synthesis
 		for (const n of pattern.bass) {
 			const noteTime = currentTime + n.step * secondsPerStep;
-			scheduleBass(noteToFreq(n.note), noteTime, n.duration * secondsPerStep);
-		}
-
-		for (const n of pattern.arpeggio) {
-			const noteTime = currentTime + n.step * secondsPerStep;
-			scheduleNote(
+			playBass(
+				synth,
 				noteToFreq(n.note),
 				noteTime,
 				n.duration * secondsPerStep,
-				"triangle",
-				0.05,
 			);
 		}
 
-		for (const p of pattern.pad) {
-			const noteTime = currentTime + p.step * secondsPerStep;
-			schedulePad(p.notes, noteTime, p.duration * secondsPerStep);
+		// Schedule arpeggios with genre-specific character
+		for (const n of pattern.arpeggio) {
+			const noteTime = currentTime + n.step * secondsPerStep;
+			playArp(synth, noteToFreq(n.note), noteTime, n.duration * secondsPerStep);
 		}
 
+		// Schedule pads with genre-specific synthesis
+		for (const p of pattern.pad) {
+			const noteTime = currentTime + p.step * secondsPerStep;
+			playPad(synth, p.notes, noteTime, p.duration * secondsPerStep);
+		}
+
+		// Schedule drums with full drum kit
 		for (const d of pattern.drums) {
 			const noteTime = currentTime + d.step * secondsPerStep;
-			scheduleDrum(d.type, noteTime, d.velocity || 1, d.pitch ?? null);
+			playDrum(synth, d.type, noteTime, d.velocity || 1, d.pitch ?? null);
+		}
+
+		// Schedule FX (risers, impacts, sweeps)
+		for (const f of pattern.fx) {
+			const noteTime = currentTime + f.step * secondsPerStep;
+			const fxDuration = f.duration * secondsPerStep;
+			playFX(synth, f.type, noteTime, fxDuration, f.intensity);
 		}
 
 		currentTime += sectionSteps * secondsPerStep;

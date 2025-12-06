@@ -2,54 +2,39 @@ import type { FXType, Song } from "./types";
 
 const T = window.ThemeUtils;
 
-// Shared audio context - set by generator.ts
-let ctx: AudioContext | null = null;
-let masterGain: GainNode | null = null;
-let sidechainGain: GainNode | null = null;
-let currentSong: Song | null = null;
-
-// Switchable output for deck routing - defaults to masterGain
-let synthOutput: AudioNode | null = null;
-
-// Track last melody frequency for portamento (glide between notes)
-let lastMelodyFreq: number | null = null;
-
-/** Initialize the shared audio context for synth playback. Called by generator.ts. */
-export function setSynthContext(
-	context: AudioContext,
-	master: GainNode,
-	sidechain: GainNode,
-) {
-	ctx = context;
-	masterGain = master;
-	sidechainGain = sidechain;
-	// Default output is masterGain (used until deck routing is set up)
-	synthOutput = master;
-}
-
 /**
- * Set the output node for synth audio.
- * Used by automix to route audio through deck gain/filter nodes.
+ * Synthesis context for audio generation.
+ * Works with both live (AudioContext) and offline (OfflineAudioContext) rendering.
  */
-export function setSynthOutput(output: AudioNode | null): void {
-	synthOutput = output;
-}
+export type SynthContext = {
+	/** Audio context (AudioContext for live, OfflineAudioContext for export) */
+	ctx: BaseAudioContext;
+	/** Output node to connect sounds to */
+	output: AudioNode;
+	/** Sidechain gain for kick ducking (null for offline rendering) */
+	sidechain: GainNode | null;
+	/** Current song for genre-specific synthesis */
+	song: Song;
+	/** Mutable state for portamento tracking */
+	state: {
+		lastMelodyFreq: number | null;
+	};
+};
 
-/** Get the current synth output node. */
-function getOutput(): AudioNode | null {
-	return synthOutput ?? masterGain;
-}
-
-/** Set the current song for genre-aware synth parameters. */
-export function setSynthSong(song: Song | null) {
-	currentSong = song;
-	// Reset portamento state when changing songs
-	lastMelodyFreq = null;
-}
-
-/** Get the current song being played. */
-export function getSynthSong(): Song | null {
-	return currentSong;
+/** Create a new synth context */
+export function createSynthContext(
+	ctx: BaseAudioContext,
+	output: AudioNode,
+	song: Song,
+	sidechain: GainNode | null = null,
+): SynthContext {
+	return {
+		ctx,
+		output,
+		sidechain,
+		song,
+		state: { lastMelodyFreq: null },
+	};
 }
 
 function noteToFreq(note: number) {
@@ -70,15 +55,14 @@ type NoteOptions = {
 
 /** Play a melodic note with portamento, wow/flutter, and PWM. */
 export function playNote(
+	synth: SynthContext,
 	freq: number,
 	startTime: number,
 	duration: number,
 	opts: NoteOptions = {},
 ) {
-	if (!ctx) return;
-	const c = ctx;
-	const output = getOutput();
-	if (!output) return;
+	const c = synth.ctx;
+	const output = synth.output;
 
 	const type = opts.type ?? "square";
 	const volume = opts.volume ?? 0.15;
@@ -90,8 +74,11 @@ export function playNote(
 	const pwmDepth = opts.pwmDepth ?? 0;
 
 	// Determine starting frequency for portamento
-	const startFreq = portamento > 0 && lastMelodyFreq ? lastMelodyFreq : freq;
-	lastMelodyFreq = freq; // Update for next note
+	const startFreq =
+		portamento > 0 && synth.state.lastMelodyFreq
+			? synth.state.lastMelodyFreq
+			: freq;
+	synth.state.lastMelodyFreq = freq; // Update for next note
 
 	// Create main oscillator
 	const osc1 = c.createOscillator();
@@ -264,14 +251,16 @@ export function playNote(
 	}
 }
 
-/** Play bass with filter sweep and sub-bass layer for genre-appropriate low end. */
-export function playBass(freq: number, startTime: number, duration: number) {
-	if (!ctx) return;
-	const c = ctx;
-	const output = getOutput();
-	if (!output || !currentSong) return;
-
-	const genre = currentSong.genre;
+/** Play bass with filter sweep and sub-bass layer. */
+export function playBass(
+	synth: SynthContext,
+	freq: number,
+	startTime: number,
+	duration: number,
+) {
+	const c = synth.ctx;
+	const output = synth.output;
+	const genre = synth.song.genre;
 	const oscType = T.pick(genre.oscTypes.bass);
 
 	// Main bass oscillator
@@ -438,14 +427,16 @@ export function playBass(freq: number, startTime: number, duration: number) {
 	}
 }
 
-/** Play pad chord with genre-specific synthesis (strings, synth pads, organs). */
-export function playPad(notes: number[], startTime: number, duration: number) {
-	if (!ctx) return;
-	const c = ctx;
-	const output = getOutput();
-	if (!output || !currentSong) return;
-
-	const genre = currentSong.genre;
+/** Play pad chord with genre-specific synthesis. */
+export function playPad(
+	synth: SynthContext,
+	notes: number[],
+	startTime: number,
+	duration: number,
+) {
+	const c = synth.ctx;
+	const output = synth.output;
+	const genre = synth.song.genre;
 
 	for (const note of notes) {
 		const freq = noteToFreq(note);
@@ -675,14 +666,16 @@ export function playPad(notes: number[], startTime: number, duration: number) {
 	}
 }
 
-/** Play arpeggio note with genre-specific character and rhythmic gating. */
-export function playArp(freq: number, startTime: number, duration: number) {
-	if (!ctx) return;
-	const c = ctx;
-	const output = getOutput();
-	if (!output || !currentSong) return;
-
-	const genre = currentSong.genre;
+/** Play arpeggio note with genre-specific character. */
+export function playArp(
+	synth: SynthContext,
+	freq: number,
+	startTime: number,
+	duration: number,
+) {
+	const c = synth.ctx;
+	const output = synth.output;
+	const genre = synth.song.genre;
 	const osc = c.createOscillator();
 	const gain = c.createGain();
 	const filter = c.createBiquadFilter();
@@ -821,27 +814,30 @@ export function playArp(freq: number, startTime: number, duration: number) {
 }
 
 /** Trigger sidechain ducking for that pumping EDM feel. Called by kick drum. */
-export function triggerSidechain(startTime: number, intensity = 0.7) {
-	if (!sidechainGain || !ctx) return;
+function triggerSidechain(
+	sidechain: GainNode | null,
+	startTime: number,
+	intensity = 0.7,
+) {
+	if (!sidechain) return;
 
 	// Quick duck down, slower release for that pumping feel
-	sidechainGain.gain.cancelScheduledValues(startTime);
-	sidechainGain.gain.setValueAtTime(1, startTime);
-	sidechainGain.gain.linearRampToValueAtTime(1 - intensity, startTime + 0.01);
-	sidechainGain.gain.linearRampToValueAtTime(1, startTime + 0.15);
+	sidechain.gain.cancelScheduledValues(startTime);
+	sidechain.gain.setValueAtTime(1, startTime);
+	sidechain.gain.linearRampToValueAtTime(1 - intensity, startTime + 0.01);
+	sidechain.gain.linearRampToValueAtTime(1, startTime + 0.15);
 }
 
-/** Play synthesized drum sound (kick, snare, hihat, etc) with genre-specific character. */
+/** Play synthesized drum sound with genre-specific character. */
 export function playDrum(
+	synth: SynthContext,
 	type: string,
 	startTime: number,
 	velocity = 1,
 	pitch: number | null = null,
 ) {
-	if (!ctx) return;
-	const c = ctx;
-	const output = getOutput();
-	if (!output) return;
+	const c = synth.ctx;
+	const output = synth.output;
 
 	if (type === "kick") {
 		const osc = c.createOscillator();
@@ -858,11 +854,10 @@ export function playDrum(
 
 		// Trigger sidechain pump - stronger for EDM genres
 		const pumpIntensity =
-			currentSong?.genre.name === "techno" ||
-			currentSong?.genre.name === "trance"
+			synth.song.genre.name === "techno" || synth.song.genre.name === "trance"
 				? 0.5
 				: 0.3;
-		triggerSidechain(startTime, pumpIntensity * velocity);
+		triggerSidechain(synth.sidechain, startTime, pumpIntensity * velocity);
 	} else if (type === "snare") {
 		// Body
 		const osc = c.createOscillator();
@@ -1124,24 +1119,20 @@ export function playDrum(
 		osc.stop(startTime + 0.5);
 
 		// Trigger sidechain with longer release for that pumping feel
-		triggerSidechain(startTime, 0.6 * velocity);
+		triggerSidechain(synth.sidechain, startTime, 0.6 * velocity);
 	}
 }
 
-/**
- * Play FX sounds (risers, impacts, sweeps) for transitions and builds.
- * These add tension before drops and punctuation on section changes.
- */
+/** Play FX sounds (risers, impacts, sweeps) for transitions and builds. */
 export function playFX(
+	synth: SynthContext,
 	type: FXType,
 	startTime: number,
 	duration: number,
 	intensity = 0.7,
 ) {
-	if (!ctx) return;
-	const c = ctx;
-	const output = getOutput();
-	if (!output) return;
+	const c = synth.ctx;
+	const output = synth.output;
 
 	switch (type) {
 		case "riser": {
@@ -1254,7 +1245,7 @@ export function playFX(
 			noise.stop(startTime + 0.15);
 
 			// Trigger hard sidechain duck for that pumping impact
-			triggerSidechain(startTime, 0.8 * intensity);
+			triggerSidechain(synth.sidechain, startTime, 0.8 * intensity);
 			break;
 		}
 
