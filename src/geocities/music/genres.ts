@@ -17,6 +17,7 @@ export const genres: Record<GenreType, Genre> = {
 		detuneRange: [0, 2], // Slight variation, mostly straight
 		attackRange: [0.003, 0.008],
 		swingRange: [0, 0.05], // Mostly straight timing for that rigid 8-bit feel
+		transitions: ["drop", "hardcut"],
 	},
 	ambient: {
 		name: "ambient",
@@ -36,6 +37,7 @@ export const genres: Record<GenreType, Genre> = {
 		detuneRange: [5, 12],
 		attackRange: [0.2, 0.4],
 		swingRange: [0.05, 0.15], // Very slight swing for organic feel
+		transitions: ["crossfade", "echo"],
 	},
 	synthwave: {
 		name: "synthwave",
@@ -55,6 +57,7 @@ export const genres: Record<GenreType, Genre> = {
 		detuneRange: [3, 8],
 		attackRange: [0.01, 0.03],
 		swingRange: [0, 0.08], // Minimal swing
+		transitions: ["filterSweep", "beatmatch"],
 	},
 	lofi: {
 		name: "lofi",
@@ -80,6 +83,7 @@ export const genres: Record<GenreType, Genre> = {
 		detuneRange: [8, 16],
 		attackRange: [0.03, 0.08],
 		swingRange: [0.25, 0.4], // Heavy swing for that jazzy lofi feel
+		transitions: ["crossfade", "filterSweep"],
 	},
 	techno: {
 		name: "techno",
@@ -107,6 +111,7 @@ export const genres: Record<GenreType, Genre> = {
 		detuneRange: [1, 5],
 		attackRange: [0.005, 0.02],
 		swingRange: [0, 0.03], // Dead straight for machine precision
+		transitions: ["beatmatch", "filterSweep", "drop"],
 	},
 	trance: {
 		name: "trance",
@@ -119,6 +124,7 @@ export const genres: Record<GenreType, Genre> = {
 		detuneRange: [4, 9],
 		attackRange: [0.005, 0.02],
 		swingRange: [0, 0.03], // Straight timing
+		transitions: ["beatmatch", "filterSweep"],
 	},
 	midi: {
 		name: "midi",
@@ -134,6 +140,7 @@ export const genres: Record<GenreType, Genre> = {
 		detuneRange: [0, 1], // No detune - that thin single-osc sound
 		attackRange: [0.001, 0.005], // Instant attack
 		swingRange: [0, 0.02], // Rigid timing
+		transitions: ["hardcut"],
 	},
 	happycore: {
 		name: "happycore",
@@ -146,6 +153,7 @@ export const genres: Record<GenreType, Genre> = {
 		detuneRange: [2, 6],
 		attackRange: [0.003, 0.01],
 		swingRange: [0, 0.03], // Dead straight for maximum energy
+		transitions: ["drop", "beatmatch"],
 	},
 	vaporwave: {
 		name: "vaporwave",
@@ -164,6 +172,7 @@ export const genres: Record<GenreType, Genre> = {
 		detuneRange: [12, 20], // Very detuned for that warped tape feel
 		attackRange: [0.1, 0.2], // Slow attack
 		swingRange: [0.15, 0.25], // Lazy swing
+		transitions: ["echo", "crossfade"],
 	},
 };
 

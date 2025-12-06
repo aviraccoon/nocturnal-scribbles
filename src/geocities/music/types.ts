@@ -238,6 +238,8 @@ export type Genre = {
 	attackRange: [number, number];
 	// Timing feel (0 = straight, 0.5 = full triplet swing)
 	swingRange: [number, number];
+	// Automix transition styles (one is picked randomly)
+	transitions: TransitionStyle[];
 };
 
 export type Song = {
@@ -358,17 +360,4 @@ export type AutomixSettings = {
 	style: TransitionStyle | "auto"; // "auto" picks based on genre
 	transitionBars: number; // How many bars to overlap (2-8)
 	matchTempo: boolean; // Slightly adjust incoming tempo to match
-};
-
-/** Genre-appropriate default transition styles */
-export const genreTransitionStyle: Record<GenreType, TransitionStyle> = {
-	techno: "beatmatch",
-	trance: "beatmatch",
-	happycore: "drop",
-	synthwave: "filterSweep",
-	lofi: "crossfade",
-	ambient: "crossfade",
-	vaporwave: "crossfade",
-	chiptune: "drop",
-	midi: "hardcut",
 };

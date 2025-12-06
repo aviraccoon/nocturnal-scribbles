@@ -1,3 +1,4 @@
+import { musicEvents } from "./events";
 import * as musicGen from "./generator";
 import { randomizeDJVoice, setLyricsCallback } from "./lyrics";
 import { saveSongAsMIDI } from "./midi";
@@ -5,6 +6,7 @@ import { isInTransition, toggleAutomix } from "./mixer";
 import { getCurrentStation, setCurrentStation } from "./radio";
 import { stations } from "./radio-data";
 import { saveSongAsWAV } from "./recorder";
+import type { TransitionStyle } from "./types";
 
 const T = window.ThemeUtils;
 
@@ -111,6 +113,10 @@ export function addMusicPlayer(
 				<div class="player-info-row">
 					<span class="player-info-label">Chords:</span>
 					<span class="player-info-value player-progression">--</span>
+				</div>
+				<div class="player-info-row">
+					<span class="player-info-label">Transitions:</span>
+					<span class="player-info-value player-transitions">--</span>
 				</div>
 			</div>
 			<div class="player-mixer" style="display: none;">
@@ -578,6 +584,7 @@ export function addMusicPlayer(
 	const energyEl = player.querySelector(".player-energy");
 	const activeTracksEl = player.querySelector(".player-active-tracks");
 	const progressionEl = player.querySelector(".player-progression");
+	const transitionsEl = player.querySelector(".player-transitions");
 	const playBtn = player.querySelector(
 		'[data-action="play"]',
 	) as HTMLButtonElement | null;
@@ -601,6 +608,7 @@ export function addMusicPlayer(
 	let analyserData: Uint8Array | null = null;
 	let lastTrackName: string | null = null;
 	let lastTransitionState = false;
+	let activeTransitionStyle: TransitionStyle | null = null;
 
 	function formatTime(seconds: number) {
 		const mins = Math.floor(seconds / 60);
@@ -629,6 +637,20 @@ export function addMusicPlayer(
 					.map((p) => numerals[p % 7] ?? p)
 					.join("-");
 				progressionEl.textContent = progStr;
+			}
+			if (transitionsEl) {
+				// Highlight active transition if one is in progress
+				if (activeTransitionStyle) {
+					transitionsEl.innerHTML = song.genre.transitions
+						.map((t) =>
+							t === activeTransitionStyle
+								? `<strong style="color: var(--accent-color, #0f0)">${t}</strong>`
+								: t,
+						)
+						.join(", ");
+				} else {
+					transitionsEl.textContent = song.genre.transitions.join(", ");
+				}
 			}
 		}
 		if (playBtn) {
@@ -1282,6 +1304,17 @@ export function addMusicPlayer(
 			if (titlebar) titlebar.style.cursor = "grab";
 			document.body.style.userSelect = "";
 		}
+	});
+
+	// Track active transition style for display
+	musicEvents.on("transitionStart", (e) => {
+		activeTransitionStyle = e.style;
+		updateDisplay();
+	});
+
+	musicEvents.on("transitionComplete", () => {
+		activeTransitionStyle = null;
+		updateDisplay();
 	});
 
 	// Generate initial track

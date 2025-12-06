@@ -9,15 +9,16 @@
  */
 
 import { musicEvents } from "./events";
-import {
-	type AutomixSettings,
-	type Deck,
-	type DeckId,
-	genreTransitionStyle,
-	type PlayableItem,
-	type Song,
-	type TransitionStyle,
+import type {
+	AutomixSettings,
+	Deck,
+	DeckId,
+	PlayableItem,
+	Song,
+	TransitionStyle,
 } from "./types";
+
+const T = window.ThemeUtils;
 
 // ============================================
 // State
@@ -70,6 +71,9 @@ function getInactiveDeck(): Deck {
 	return decks[activeDeckId === "A" ? "B" : "A"];
 }
 
+/** Feedback gain node for deck delay (used in echo transitions) */
+const deckDelayFeedback: Record<DeckId, GainNode | null> = { A: null, B: null };
+
 function initDeckAudio(deck: Deck): void {
 	if (!audioContext || !masterOutput) return;
 
@@ -84,6 +88,18 @@ function initDeckAudio(deck: Deck): void {
 	deck.filterNode.frequency.value = 20000; // Wide open
 	deck.filterNode.Q.value = 0.5;
 	deck.filterNode.connect(deck.gainNode);
+
+	// Create delay for echo transitions
+	deck.delayNode = audioContext.createDelay(1.0);
+	deck.delayNode.delayTime.value = 0.375; // Dotted eighth note feel
+	const feedback = audioContext.createGain();
+	feedback.gain.value = 0; // Off by default
+	deckDelayFeedback[deck.id] = feedback;
+
+	// Delay routing: filter -> delay -> feedback -> delay, delay -> gain
+	deck.delayNode.connect(feedback);
+	feedback.connect(deck.delayNode);
+	deck.delayNode.connect(deck.gainNode);
 }
 
 function resetDeck(deck: Deck): void {
@@ -93,14 +109,28 @@ function resetDeck(deck: Deck): void {
 	deck.currentStep = 0;
 	deck.startTime = 0;
 
-	// Reset gain to 0 for inactive deck
-	if (deck.gainNode && audioContext) {
-		deck.gainNode.gain.setValueAtTime(0, audioContext.currentTime);
-	}
+	// Cancel any scheduled automation before resetting values
+	if (audioContext) {
+		const now = audioContext.currentTime;
 
-	// Reset filter
-	if (deck.filterNode && audioContext) {
-		deck.filterNode.frequency.setValueAtTime(20000, audioContext.currentTime);
+		// Reset gain to 0 for inactive deck
+		if (deck.gainNode) {
+			deck.gainNode.gain.cancelScheduledValues(now);
+			deck.gainNode.gain.setValueAtTime(0, now);
+		}
+
+		// Reset filter
+		if (deck.filterNode) {
+			deck.filterNode.frequency.cancelScheduledValues(now);
+			deck.filterNode.frequency.setValueAtTime(20000, now);
+		}
+
+		// Reset delay feedback
+		const feedback = deckDelayFeedback[deck.id];
+		if (feedback) {
+			feedback.gain.cancelScheduledValues(now);
+			feedback.gain.setValueAtTime(0, now);
+		}
 	}
 }
 
@@ -173,8 +203,9 @@ export function determineTransitionStyle(
 
 	// Both are songs - use automix style
 	if (automixSettings.style === "auto") {
-		// Use the incoming song's genre to determine style
-		return genreTransitionStyle[next.song.genre.name] ?? "crossfade";
+		// Use the outgoing song's genre to determine style
+		// (transition out in a way that matches the current vibe)
+		return T.pick(current.song.genre.transitions);
 	}
 
 	return automixSettings.style;
@@ -297,9 +328,99 @@ function executeHardcut(outgoing: Deck, incoming: Deck): void {
 }
 
 /**
- * Start a transition to the next item.
+ * Execute a beatmatch transition (equal-power crossfade for smoother blend).
+ * Uses exponential curves to maintain perceived volume during the mix.
  */
-export function startTransition(nextItem: PlayableItem): void {
+function executeBeatmatch(
+	outgoing: Deck,
+	incoming: Deck,
+	duration: number,
+): void {
+	if (!audioContext) return;
+
+	const now = audioContext.currentTime;
+	const endTime = now + duration;
+
+	// Equal-power crossfade: use exponential ramps for smoother perceived volume
+	// Outgoing: hold briefly, then fade with exponential curve
+	if (outgoing.gainNode) {
+		outgoing.state = "fadeOut";
+		outgoing.gainNode.gain.setValueAtTime(1, now);
+		// Hold at full for first quarter, then fade
+		outgoing.gainNode.gain.setValueAtTime(1, now + duration * 0.25);
+		outgoing.gainNode.gain.exponentialRampToValueAtTime(0.01, endTime);
+	}
+
+	// Incoming: start quiet, ramp up with exponential curve
+	if (incoming.gainNode) {
+		incoming.state = "fadeIn";
+		incoming.gainNode.gain.setValueAtTime(0.01, now);
+		// Ramp up to full by 75% point, hold
+		incoming.gainNode.gain.exponentialRampToValueAtTime(
+			1,
+			now + duration * 0.75,
+		);
+		incoming.gainNode.gain.setValueAtTime(1, endTime);
+	}
+}
+
+/**
+ * Execute an echo transition (outgoing fades with increasing delay feedback).
+ * Creates a spacey, dub-style transition.
+ */
+function executeEcho(outgoing: Deck, incoming: Deck, duration: number): void {
+	if (!audioContext) return;
+
+	const now = audioContext.currentTime;
+	const endTime = now + duration;
+	const outgoingFeedback = deckDelayFeedback[outgoing.id];
+
+	// Outgoing: fade out while ramping up delay feedback
+	if (outgoing.gainNode) {
+		outgoing.state = "fadeOut";
+		outgoing.gainNode.gain.setValueAtTime(1, now);
+		outgoing.gainNode.gain.linearRampToValueAtTime(0, endTime);
+	}
+
+	// Ramp up delay feedback on outgoing for echo tail
+	if (outgoingFeedback) {
+		outgoingFeedback.gain.setValueAtTime(0, now);
+		// Ramp to high feedback (but not infinite) for echo buildup
+		outgoingFeedback.gain.linearRampToValueAtTime(0.7, now + duration * 0.5);
+		// Then decay the feedback so echoes die out
+		outgoingFeedback.gain.linearRampToValueAtTime(0.3, endTime);
+	}
+
+	// Set delay time based on tempo if available
+	if (outgoing.delayNode && outgoing.item?.kind === "song") {
+		const tempo = outgoing.item.song.tempo;
+		const beatDuration = 60 / tempo;
+		// Dotted eighth note delay (3/4 of a beat) for classic dub feel
+		outgoing.delayNode.delayTime.setValueAtTime(beatDuration * 0.75, now);
+	}
+
+	// Incoming: stay silent until near the end, then quick fade in
+	// This way the incoming song starts fresh when it becomes audible
+	if (incoming.gainNode) {
+		incoming.state = "fadeIn";
+		incoming.gainNode.gain.setValueAtTime(0, now);
+		// Stay at 0 for 80% of the transition while outgoing echoes out
+		incoming.gainNode.gain.setValueAtTime(0, now + duration * 0.8);
+		// Quick fade in for the last 20%
+		incoming.gainNode.gain.linearRampToValueAtTime(1, endTime);
+	}
+}
+
+/**
+ * Start a transition to the next item.
+ * @param skipTimer - If true, don't schedule the completion timer (caller will call finishTransition)
+ * @param barsRemaining - Actual bars remaining in song (used for duration if provided)
+ */
+export function startTransition(
+	nextItem: PlayableItem,
+	skipTimer = false,
+	barsRemaining?: number,
+): void {
 	if (isTransitioning) return;
 
 	const outgoing = getActiveDeck();
@@ -308,10 +429,9 @@ export function startTransition(nextItem: PlayableItem): void {
 	const style = determineTransitionStyle(outgoing.item, nextItem);
 	const outgoingSong =
 		outgoing.item?.kind === "song" ? outgoing.item.song : null;
-	const duration = getTransitionDuration(
-		outgoingSong,
-		automixSettings.transitionBars,
-	);
+	// Use actual barsRemaining if provided, otherwise fall back to setting
+	const transitionBars = barsRemaining ?? automixSettings.transitionBars;
+	const duration = getTransitionDuration(outgoingSong, transitionBars);
 
 	// Load the next item into the incoming deck
 	incoming.item = nextItem;
@@ -328,39 +448,43 @@ export function startTransition(nextItem: PlayableItem): void {
 		style,
 	});
 
-	// Execute the appropriate transition
-	switch (style) {
-		case "crossfade":
-			executeCrossfade(outgoing, incoming, duration);
-			break;
-		case "filterSweep":
-			executeFilterSweep(outgoing, incoming, duration);
-			break;
-		case "drop":
-			executeDrop(outgoing, incoming);
-			break;
-		case "beatmatch":
-			// For now, beatmatch is just a crossfade
-			// TODO: implement actual tempo matching
-			executeCrossfade(outgoing, incoming, duration);
-			break;
-		case "echo":
-			// TODO: implement echo transition
-			executeCrossfade(outgoing, incoming, duration);
-			break;
-		default:
-			// hardcut or unknown - immediate switch
-			executeHardcut(outgoing, incoming);
-			break;
+	// Only execute audio effects if we're doing an immediate transition.
+	// When skipTimer is true, we're in "early start" mode - the MIX indicator shows,
+	// but we keep audio at full volume since there's no dual playback yet.
+	// The actual switch happens when finishTransition() is called.
+	if (!skipTimer) {
+		switch (style) {
+			case "crossfade":
+				executeCrossfade(outgoing, incoming, duration);
+				break;
+			case "filterSweep":
+				executeFilterSweep(outgoing, incoming, duration);
+				break;
+			case "drop":
+				executeDrop(outgoing, incoming);
+				break;
+			case "beatmatch":
+				executeBeatmatch(outgoing, incoming, duration);
+				break;
+			case "echo":
+				executeEcho(outgoing, incoming, duration);
+				break;
+			default:
+				// hardcut or unknown - immediate switch
+				executeHardcut(outgoing, incoming);
+				break;
+		}
 	}
 
-	// Schedule transition completion
-	const completionDelay =
-		style === "drop" || style === "hardcut" ? 100 : duration * 1000;
+	// Schedule transition completion (unless caller will handle it)
+	if (!skipTimer) {
+		const completionDelay =
+			style === "drop" || style === "hardcut" ? 100 : duration * 1000;
 
-	transitionTimeout = setTimeout(() => {
-		completeTransition();
-	}, completionDelay);
+		transitionTimeout = setTimeout(() => {
+			completeTransition();
+		}, completionDelay);
+	}
 }
 
 /**
@@ -379,6 +503,31 @@ function completeTransition(): void {
 
 	// Reset outgoing deck
 	resetDeck(outgoing);
+
+	// Ensure incoming deck is at full volume with open filter
+	// (transition effects should have completed, but ensure clean state)
+	if (audioContext) {
+		const now = audioContext.currentTime;
+
+		if (incoming.gainNode) {
+			incoming.gainNode.gain.cancelScheduledValues(now);
+			incoming.gainNode.gain.setValueAtTime(1, now);
+		}
+
+		if (incoming.filterNode) {
+			incoming.filterNode.frequency.cancelScheduledValues(now);
+			incoming.filterNode.frequency.setValueAtTime(20000, now);
+		}
+
+		const feedback = deckDelayFeedback[incoming.id];
+		if (feedback) {
+			feedback.gain.cancelScheduledValues(now);
+			feedback.gain.setValueAtTime(0, now);
+		}
+	}
+
+	// Dequeue the item we just transitioned to
+	dequeueNext();
 
 	// Switch active deck
 	activeDeckId = incoming.id;
@@ -424,6 +573,55 @@ export function cancelTransition(): void {
 	outgoing.state = "playing";
 
 	isTransitioning = false;
+}
+
+/**
+ * Finish a transition immediately (used when song ends naturally).
+ * Unlike cancelTransition, this completes the transition rather than aborting it.
+ */
+export function finishTransition(): void {
+	if (!isTransitioning) return;
+
+	if (transitionTimeout) {
+		clearTimeout(transitionTimeout);
+		transitionTimeout = null;
+	}
+
+	const outgoing = getActiveDeck();
+	const incoming = getInactiveDeck();
+
+	// Reset outgoing deck (sets gain to 0, ready for next transition)
+	resetDeck(outgoing);
+
+	// Ensure incoming deck is at full volume with open filter
+	// Cancel any scheduled values from transition effects (crossfade, filterSweep, etc.)
+	if (audioContext) {
+		const now = audioContext.currentTime;
+
+		if (incoming.gainNode) {
+			incoming.gainNode.gain.cancelScheduledValues(now);
+			incoming.gainNode.gain.setValueAtTime(1, now);
+		}
+
+		if (incoming.filterNode) {
+			incoming.filterNode.frequency.cancelScheduledValues(now);
+			incoming.filterNode.frequency.setValueAtTime(20000, now);
+		}
+
+		// Also reset incoming delay feedback in case echo transition was in progress
+		const feedback = deckDelayFeedback[incoming.id];
+		if (feedback) {
+			feedback.gain.cancelScheduledValues(now);
+			feedback.gain.setValueAtTime(0, now);
+		}
+	}
+
+	// Make incoming deck the new active deck
+	activeDeckId = incoming.id;
+	incoming.state = "playing";
+
+	isTransitioning = false;
+	musicEvents.emit({ type: "transitionComplete" });
 }
 
 // ============================================
@@ -476,6 +674,31 @@ export function isInTransition(): boolean {
 	return isTransitioning;
 }
 
+/** Get delay before incoming deck should start playing (in seconds) */
+export function getIncomingStartDelay(): number {
+	if (!isTransitioning) return 0;
+
+	const outgoing = getActiveDeck();
+	const incoming = getInactiveDeck();
+
+	if (!incoming.item) return 0;
+
+	const style = determineTransitionStyle(outgoing.item, incoming.item);
+
+	// For echo, incoming should start 80% through the transition
+	if (style === "echo") {
+		const outgoingSong =
+			outgoing.item?.kind === "song" ? outgoing.item.song : null;
+		const duration = getTransitionDuration(
+			outgoingSong,
+			automixSettings.transitionBars,
+		);
+		return duration * 0.8;
+	}
+
+	return 0;
+}
+
 /** Get the gain node for a deck (for routing audio) */
 export function getDeckOutput(id: DeckId): AudioNode | null {
 	return decks[id].filterNode ?? decks[id].gainNode;
@@ -504,6 +727,11 @@ export function startPlayback(): void {
 	const deck = getActiveDeck();
 	deck.state = "playing";
 	deck.startTime = audioContext?.currentTime ?? 0;
+
+	// Ensure active deck has gain = 1 (it may have been reset by stopMixer)
+	if (deck.gainNode && audioContext) {
+		deck.gainNode.gain.setValueAtTime(1, audioContext.currentTime);
+	}
 
 	if (deck.item) {
 		musicEvents.emit({ type: "itemStarted", item: deck.item });

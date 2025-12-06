@@ -8,6 +8,9 @@ let masterGain: GainNode | null = null;
 let sidechainGain: GainNode | null = null;
 let currentSong: Song | null = null;
 
+// Switchable output for deck routing - defaults to masterGain
+let synthOutput: AudioNode | null = null;
+
 /** Initialize the shared audio context for synth playback. Called by generator.ts. */
 export function setSynthContext(
 	context: AudioContext,
@@ -17,6 +20,21 @@ export function setSynthContext(
 	ctx = context;
 	masterGain = master;
 	sidechainGain = sidechain;
+	// Default output is masterGain (used until deck routing is set up)
+	synthOutput = master;
+}
+
+/**
+ * Set the output node for synth audio.
+ * Used by automix to route audio through deck gain/filter nodes.
+ */
+export function setSynthOutput(output: AudioNode | null): void {
+	synthOutput = output;
+}
+
+/** Get the current synth output node. */
+function getOutput(): AudioNode | null {
+	return synthOutput ?? masterGain;
 }
 
 /** Set the current song for genre-aware synth parameters. */
@@ -51,7 +69,8 @@ export function playNote(
 ) {
 	if (!ctx) return;
 	const c = ctx;
-	if (!masterGain) return;
+	const output = getOutput();
+	if (!output) return;
 
 	const type = opts.type ?? "square";
 	const volume = opts.volume ?? 0.15;
@@ -104,7 +123,7 @@ export function playNote(
 	gain1.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
 
 	osc1.connect(gain1);
-	gain1.connect(masterGain);
+	gain1.connect(output);
 	osc1.start(startTime);
 	osc1.stop(startTime + duration + 0.1);
 
@@ -113,7 +132,7 @@ export function playNote(
 		gain2.gain.linearRampToValueAtTime(volume * 0.5, startTime + attack);
 		gain2.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
 		osc2.connect(gain2);
-		gain2.connect(masterGain);
+		gain2.connect(output);
 		osc2.start(startTime);
 		osc2.stop(startTime + duration + 0.1);
 	}
@@ -123,7 +142,8 @@ export function playNote(
 export function playBass(freq: number, startTime: number, duration: number) {
 	if (!ctx) return;
 	const c = ctx;
-	if (!masterGain || !currentSong) return;
+	const output = getOutput();
+	if (!output || !currentSong) return;
 
 	const genre = currentSong.genre;
 	const oscType = T.pick(genre.oscTypes.bass);
@@ -266,7 +286,7 @@ export function playBass(freq: number, startTime: number, duration: number) {
 
 	osc.connect(filter);
 	filter.connect(gain);
-	gain.connect(masterGain);
+	gain.connect(output);
 
 	osc.start(startTime);
 	osc.stop(startTime + duration + 0.1);
@@ -286,7 +306,7 @@ export function playBass(freq: number, startTime: number, duration: number) {
 		subGain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
 
 		subOsc.connect(subGain);
-		subGain.connect(masterGain);
+		subGain.connect(output);
 		subOsc.start(startTime);
 		subOsc.stop(startTime + duration + 0.1);
 	}
@@ -296,7 +316,8 @@ export function playBass(freq: number, startTime: number, duration: number) {
 export function playPad(notes: number[], startTime: number, duration: number) {
 	if (!ctx) return;
 	const c = ctx;
-	if (!masterGain || !currentSong) return;
+	const output = getOutput();
+	if (!output || !currentSong) return;
 
 	const genre = currentSong.genre;
 
@@ -323,7 +344,7 @@ export function playPad(notes: number[], startTime: number, duration: number) {
 					gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
 					osc.connect(filter);
 					filter.connect(gain);
-					gain.connect(masterGain);
+					gain.connect(output);
 					osc.start(startTime);
 					osc.stop(startTime + duration + 0.3);
 				}
@@ -353,7 +374,7 @@ export function playPad(notes: number[], startTime: number, duration: number) {
 					gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
 					osc.connect(filter);
 					filter.connect(gain);
-					gain.connect(masterGain);
+					gain.connect(output);
 					osc.start(startTime);
 					osc.stop(startTime + duration + 0.3);
 				}
@@ -381,7 +402,7 @@ export function playPad(notes: number[], startTime: number, duration: number) {
 				gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
 				osc.connect(gain);
 				osc2.connect(gain);
-				gain.connect(masterGain);
+				gain.connect(output);
 				osc.start(startTime);
 				osc2.start(startTime);
 				lfo.start(startTime);
@@ -408,7 +429,7 @@ export function playPad(notes: number[], startTime: number, duration: number) {
 					gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
 					osc.connect(filter);
 					filter.connect(gain);
-					gain.connect(masterGain);
+					gain.connect(output);
 					osc.start(startTime);
 					osc.stop(startTime + duration + 0.4);
 				}
@@ -434,7 +455,7 @@ export function playPad(notes: number[], startTime: number, duration: number) {
 				osc.connect(filter);
 				osc2.connect(filter);
 				filter.connect(gain);
-				gain.connect(masterGain);
+				gain.connect(output);
 				osc.start(startTime);
 				osc2.start(startTime);
 				osc.stop(startTime + duration + 0.3);
@@ -453,7 +474,7 @@ export function playPad(notes: number[], startTime: number, duration: number) {
 				gain.gain.setValueAtTime(0.025, startTime + duration * 0.8);
 				gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
 				osc.connect(gain);
-				gain.connect(masterGain);
+				gain.connect(output);
 				osc.start(startTime);
 				osc.stop(startTime + duration + 0.1);
 				break;
@@ -480,7 +501,7 @@ export function playPad(notes: number[], startTime: number, duration: number) {
 				gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
 				osc.connect(filter);
 				filter.connect(gain);
-				gain.connect(masterGain);
+				gain.connect(output);
 				osc.start(startTime);
 				osc.stop(startTime + duration + 0.2);
 				break;
@@ -501,7 +522,7 @@ export function playPad(notes: number[], startTime: number, duration: number) {
 				gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
 				osc.connect(gain);
 				osc2.connect(gain);
-				gain.connect(masterGain);
+				gain.connect(output);
 				osc.start(startTime);
 				osc2.start(startTime);
 				osc.stop(startTime + duration + 0.1);
@@ -520,7 +541,7 @@ export function playPad(notes: number[], startTime: number, duration: number) {
 				gain.gain.setValueAtTime(0.04, startTime + duration * 0.7);
 				gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
 				osc.connect(gain);
-				gain.connect(masterGain);
+				gain.connect(output);
 				osc.start(startTime);
 				osc.stop(startTime + duration + 0.2);
 			}
@@ -532,7 +553,8 @@ export function playPad(notes: number[], startTime: number, duration: number) {
 export function playArp(freq: number, startTime: number, duration: number) {
 	if (!ctx) return;
 	const c = ctx;
-	if (!masterGain || !currentSong) return;
+	const output = getOutput();
+	if (!output || !currentSong) return;
 
 	const genre = currentSong.genre;
 	const osc = c.createOscillator();
@@ -667,7 +689,7 @@ export function playArp(freq: number, startTime: number, duration: number) {
 
 	osc.connect(filter);
 	filter.connect(gain);
-	gain.connect(masterGain);
+	gain.connect(output);
 	osc.start(startTime);
 	osc.stop(startTime + duration + 0.1);
 }
@@ -692,7 +714,8 @@ export function playDrum(
 ) {
 	if (!ctx) return;
 	const c = ctx;
-	if (!masterGain) return;
+	const output = getOutput();
+	if (!output) return;
 
 	if (type === "kick") {
 		const osc = c.createOscillator();
@@ -703,7 +726,7 @@ export function playDrum(
 		gain.gain.setValueAtTime(0.5 * velocity, startTime);
 		gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.25);
 		osc.connect(gain);
-		gain.connect(masterGain);
+		gain.connect(output);
 		osc.start(startTime);
 		osc.stop(startTime + 0.25);
 
@@ -724,7 +747,7 @@ export function playDrum(
 		oscGain.gain.setValueAtTime(0.2 * velocity, startTime);
 		oscGain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.1);
 		osc.connect(oscGain);
-		oscGain.connect(masterGain);
+		oscGain.connect(output);
 		osc.start(startTime);
 		osc.stop(startTime + 0.1);
 
@@ -745,7 +768,7 @@ export function playDrum(
 		noiseGain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.15);
 		noise.connect(filter);
 		filter.connect(noiseGain);
-		noiseGain.connect(masterGain);
+		noiseGain.connect(output);
 		noise.start(startTime);
 		noise.stop(startTime + 0.15);
 	} else if (type === "hihat" || type === "hihatOpen") {
@@ -767,7 +790,7 @@ export function playDrum(
 		noiseGain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
 		noise.connect(filter);
 		filter.connect(noiseGain);
-		noiseGain.connect(masterGain);
+		noiseGain.connect(output);
 		noise.start(startTime);
 		noise.stop(startTime + duration);
 	} else if (type === "tom") {
@@ -780,7 +803,7 @@ export function playDrum(
 		gain.gain.setValueAtTime(0.3 * velocity, startTime);
 		gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.2);
 		osc.connect(gain);
-		gain.connect(masterGain);
+		gain.connect(output);
 		osc.start(startTime);
 		osc.stop(startTime + 0.2);
 	} else if (type === "crash") {
@@ -800,7 +823,7 @@ export function playDrum(
 		noiseGain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.8);
 		noise.connect(filter);
 		filter.connect(noiseGain);
-		noiseGain.connect(masterGain);
+		noiseGain.connect(output);
 		noise.start(startTime);
 		noise.stop(startTime + 0.8);
 	} else if (type === "cowbell") {
@@ -825,7 +848,7 @@ export function playDrum(
 		osc1.connect(filter);
 		osc2.connect(filter);
 		filter.connect(gain);
-		gain.connect(masterGain);
+		gain.connect(output);
 
 		osc1.start(startTime);
 		osc2.start(startTime);
@@ -859,7 +882,7 @@ export function playDrum(
 
 			noise.connect(filter);
 			filter.connect(noiseGain);
-			noiseGain.connect(masterGain);
+			noiseGain.connect(output);
 			noise.start(startTime + delay);
 			noise.stop(startTime + delay + 0.1);
 		}
@@ -883,7 +906,7 @@ export function playDrum(
 		noiseGain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
 		noise.connect(filter);
 		filter.connect(noiseGain);
-		noiseGain.connect(masterGain);
+		noiseGain.connect(output);
 		noise.start(startTime);
 		noise.stop(startTime + duration);
 	} else if (type === "rimshot") {
@@ -896,7 +919,7 @@ export function playDrum(
 		gain.gain.setValueAtTime(0.3 * velocity, startTime);
 		gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.03);
 		osc.connect(gain);
-		gain.connect(masterGain);
+		gain.connect(output);
 		osc.start(startTime);
 		osc.stop(startTime + 0.03);
 
@@ -908,7 +931,7 @@ export function playDrum(
 		clickGain.gain.setValueAtTime(0.15 * velocity, startTime);
 		clickGain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.005);
 		click.connect(clickGain);
-		clickGain.connect(masterGain);
+		clickGain.connect(output);
 		click.start(startTime);
 		click.stop(startTime + 0.005);
 	} else if (type === "shaker") {
@@ -931,7 +954,7 @@ export function playDrum(
 		noiseGain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
 		noise.connect(filter);
 		filter.connect(noiseGain);
-		noiseGain.connect(masterGain);
+		noiseGain.connect(output);
 		noise.start(startTime);
 		noise.stop(startTime + duration);
 	} else if (type === "conga" || type === "bongo") {
@@ -945,7 +968,7 @@ export function playDrum(
 		gain.gain.setValueAtTime(0.25 * velocity, startTime);
 		gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.12);
 		osc.connect(gain);
-		gain.connect(masterGain);
+		gain.connect(output);
 		osc.start(startTime);
 		osc.stop(startTime + 0.12);
 
@@ -957,7 +980,7 @@ export function playDrum(
 		slapGain.gain.setValueAtTime(0.1 * velocity, startTime);
 		slapGain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.015);
 		slap.connect(slapGain);
-		slapGain.connect(masterGain);
+		slapGain.connect(output);
 		slap.start(startTime);
 		slap.stop(startTime + 0.015);
 	} else if (type === "sub808") {
@@ -970,7 +993,7 @@ export function playDrum(
 		gain.gain.setValueAtTime(0.6 * velocity, startTime);
 		gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.5);
 		osc.connect(gain);
-		gain.connect(masterGain);
+		gain.connect(output);
 		osc.start(startTime);
 		osc.stop(startTime + 0.5);
 
