@@ -1310,35 +1310,69 @@ export function addMusicPlayer(
 		player.classList.toggle("minimized");
 	});
 
-	// Make draggable
+	// Make draggable (mouse and touch)
 	let isDragging = false;
 	let dragOffsetX = 0;
 	let dragOffsetY = 0;
 
-	titlebar?.addEventListener("mousedown", (e) => {
-		if (e.target === minimizeBtn) return;
+	function startDrag(clientX: number, clientY: number) {
 		isDragging = true;
-		dragOffsetX = e.clientX - player.offsetLeft;
-		dragOffsetY = e.clientY - player.offsetTop;
+		dragOffsetX = clientX - player.offsetLeft;
+		dragOffsetY = clientY - player.offsetTop;
 		if (titlebar) titlebar.style.cursor = "grabbing";
 		document.body.style.userSelect = "none";
-	});
+	}
 
-	document.addEventListener("mousemove", (e) => {
+	function moveDrag(clientX: number, clientY: number) {
 		if (!isDragging) return;
-		player.style.left = `${e.clientX - dragOffsetX}px`;
-		player.style.top = `${e.clientY - dragOffsetY}px`;
+		player.style.left = `${clientX - dragOffsetX}px`;
+		player.style.top = `${clientY - dragOffsetY}px`;
 		player.style.right = "auto";
 		player.style.bottom = "auto";
-	});
+	}
 
-	document.addEventListener("mouseup", () => {
+	function endDrag() {
 		if (isDragging) {
 			isDragging = false;
 			if (titlebar) titlebar.style.cursor = "grab";
 			document.body.style.userSelect = "";
 		}
+	}
+
+	// Mouse events
+	titlebar?.addEventListener("mousedown", (e) => {
+		if (e.target === minimizeBtn) return;
+		startDrag(e.clientX, e.clientY);
 	});
+	document.addEventListener("mousemove", (e) => moveDrag(e.clientX, e.clientY));
+	document.addEventListener("mouseup", endDrag);
+
+	// Touch events
+	titlebar?.addEventListener(
+		"touchstart",
+		(e) => {
+			if (e.target === minimizeBtn) return;
+			const touch = e.touches[0];
+			if (touch) {
+				e.preventDefault();
+				startDrag(touch.clientX, touch.clientY);
+			}
+		},
+		{ passive: false },
+	);
+	document.addEventListener(
+		"touchmove",
+		(e) => {
+			const touch = e.touches[0];
+			if (touch && isDragging) {
+				e.preventDefault();
+				moveDrag(touch.clientX, touch.clientY);
+			}
+		},
+		{ passive: false },
+	);
+	document.addEventListener("touchend", endDrag);
+	document.addEventListener("touchcancel", endDrag);
 
 	// Track active transition style for display
 	musicEvents.on("transitionStart", (e) => {

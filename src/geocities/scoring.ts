@@ -144,38 +144,70 @@ export const scoring = {
 			});
 		}
 
-		// Make it draggable
+		// Make it draggable (mouse and touch)
 		let isDragging = false;
 		let dragOffsetX = 0;
 		let dragOffsetY = 0;
 
-		counter.addEventListener("mousedown", (e) => {
-			if (e.target === resetBtn) return;
+		function startDrag(clientX: number, clientY: number) {
 			isDragging = true;
-			dragOffsetX = e.clientX - counter.offsetLeft;
-			dragOffsetY = e.clientY - counter.offsetTop;
+			dragOffsetX = clientX - counter.offsetLeft;
+			dragOffsetY = clientY - counter.offsetTop;
 			counter.style.cursor = "grabbing";
 			counter.style.transition = "none";
 			document.body.style.userSelect = "none";
-		});
+		}
 
-		document.addEventListener("mousemove", (e) => {
+		function moveDrag(clientX: number, clientY: number) {
 			if (!isDragging) return;
-			const x = e.clientX - dragOffsetX;
-			const y = e.clientY - dragOffsetY;
-			counter.style.left = `${x}px`;
-			counter.style.top = `${y}px`;
+			counter.style.left = `${clientX - dragOffsetX}px`;
+			counter.style.top = `${clientY - dragOffsetY}px`;
 			counter.style.right = "auto";
-		});
+		}
 
-		document.addEventListener("mouseup", () => {
+		function endDrag() {
 			if (isDragging) {
 				isDragging = false;
 				counter.style.cursor = "grab";
 				counter.style.transition = "transform 0.1s ease-out";
 				document.body.style.userSelect = "";
 			}
+		}
+
+		// Mouse events
+		counter.addEventListener("mousedown", (e) => {
+			if (e.target === resetBtn) return;
+			startDrag(e.clientX, e.clientY);
 		});
+		document.addEventListener("mousemove", (e) => moveDrag(e.clientX, e.clientY));
+		document.addEventListener("mouseup", endDrag);
+
+		// Touch events
+		counter.addEventListener(
+			"touchstart",
+			(e) => {
+				if (e.target === resetBtn) return;
+				const touch = e.touches[0];
+				if (touch) {
+					e.preventDefault();
+					startDrag(touch.clientX, touch.clientY);
+				}
+			},
+			{ passive: false },
+		);
+		document.addEventListener(
+			"touchmove",
+			(e) => {
+				const touch = e.touches[0];
+				if (touch && isDragging) {
+					e.preventDefault();
+					moveDrag(touch.clientX, touch.clientY);
+				}
+			},
+			{ passive: false },
+		);
+		document.addEventListener("touchend", endDrag);
+		document.addEventListener("touchcancel", endDrag);
 
 		this.counterEl = counter;
 		document.body.appendChild(counter);
