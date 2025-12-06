@@ -22,11 +22,12 @@ This document explains the technical architecture of the Geocities Music Player.
 9. [Rhythmic Pads](#rhythmic-pads)
 10. [Multi-Bar Builds](#multi-bar-builds)
 11. [Synth Enhancements](#synth-enhancements)
-12. [Dusty Archives Effect](#dusty-archives-effect)
-13. [Radio: DJs, Jingles & Commercials](#radio-djs-jingles--commercials)
-14. [Export: WAV & MIDI](#export-wav--midi)
-15. [Background Playback](#background-playback)
-16. [File Reference](#file-reference)
+12. [Reverb & Chorus Effects](#reverb--chorus-effects)
+13. [Dusty Archives Effect](#dusty-archives-effect)
+14. [Radio: DJs, Jingles & Commercials](#radio-djs-jingles--commercials)
+15. [Export: WAV & MIDI](#export-wav--midi)
+16. [Background Playback](#background-playback)
+17. [File Reference](#file-reference)
 
 ---
 
@@ -54,10 +55,15 @@ The player uses Web Audio API oscillator synthesis to generate music in real-tim
 
 **Audio Signal Flow:**
 ```
-Oscillators → Sidechain Gain → Filter → [Clean/Bitcrusher Split] → Effects → Master
-                   ↑                              ↑
-              Kick drum ducks              Chiptune/MIDI get
-              other instruments            crunchy bit reduction
+Oscillators → Sidechain Gain → Filter → [Clean/Bitcrusher Split] → Delay
+                   ↑                              ↑                   ↓
+              Kick drum ducks              Chiptune/MIDI get      Effects
+              other instruments            crunchy bit reduction     ↓
+                                                               Chorus (stereo)
+                                                                     ↓
+                                                               Reverb (convolution)
+                                                                     ↓
+                                                                  Master
 ```
 
 ---
@@ -549,6 +555,73 @@ Phase relationship changes → apparent pulse width changes
 | Sine/Triangle genres | 0 | N/A (only for square waves) |
 
 **Note:** All three enhancements are applied per-note and respect the current song's randomly-selected parameters from genre ranges. Portamento state resets when switching songs to prevent weird glides between tracks.
+
+---
+
+## Reverb & Chorus Effects
+
+### ELI5
+
+Ever notice how some music sounds like it's in a big concert hall, while other music sounds like it's right in your face? That's reverb - it's like echo but smoother, giving sounds space to breathe. And chorus? That's when you take one sound and make it sound like a whole choir singing together. The robot DJ uses both to make each genre feel right - ambient gets big dreamy reverb, trance gets that thick chorus, and chiptune stays dry like an old Nintendo.
+
+### Technical
+
+**Reverb (Convolution):**
+
+Uses a generated impulse response to simulate acoustic space via ConvolverNode. The reverb tail is procedurally created with exponential decay for natural-sounding reflections.
+
+**Implementation:**
+```
+AudioBuffer (2.5s, stereo) with random noise × exponential decay
+effectsGain → reverbDryGain → output (dry path)
+effectsGain → reverbNode → reverbMixGain → output (wet path)
+```
+
+**Genre Reverb Amounts:**
+
+| Genre | Reverb | Character |
+|-------|--------|-----------|
+| Ambient | 0.4-0.7 | Spacious and atmospheric |
+| Vaporwave | 0.35-0.6 | Empty mall vibes |
+| Trance | 0.3-0.5 | Epic builds |
+| Synthwave | 0.25-0.45 | 80s gated feel |
+| Happycore | 0.2-0.35 | Energetic but present |
+| Lofi | 0.15-0.3 | Intimate room |
+| Techno | 0.1-0.25 | Warehouse |
+| MIDI | 0.05-0.15 | Classic GM dry |
+| Chiptune | 0-0.1 | Clean digital |
+
+**Chorus (Stereo Modulated Delay):**
+
+Creates thickness by running audio through two delay lines with slightly different LFO-modulated delay times, then merging into stereo. The left and right channels have different modulation rates for a wide stereo image.
+
+**Implementation:**
+```
+effectsGain → chorusDelayL (20ms + LFO @ 0.5Hz) → stereoMerger (left)
+effectsGain → chorusDelayR (25ms + LFO @ 0.6Hz) → stereoMerger (right)
+stereoMerger → chorusMixGain → reverb chain
+```
+
+**Genre Chorus Amounts:**
+
+| Genre | Chorus | Character |
+|-------|--------|-----------|
+| Trance | 0.35-0.55 | Supersaw thickness |
+| Synthwave | 0.3-0.5 | Lush 80s pads |
+| Vaporwave | 0.3-0.5 | Detuned shimmer |
+| Happycore | 0.2-0.4 | Bright and shimmery |
+| Ambient | 0.2-0.4 | Ethereal shimmer |
+| Lofi | 0.1-0.25 | Subtle warmth |
+| Techno | 0.05-0.15 | Tight and focused |
+| MIDI | 0-0.1 | Minimal |
+| Chiptune | 0-0.05 | Very slight if any |
+
+**Stereo Width:**
+
+The chorus effect naturally creates stereo width. Additionally, each genre has a `stereoWidthRange` parameter that controls the overall spread:
+- High width (0.7-1.0): Ambient, trance, vaporwave - immersive soundscapes
+- Medium width (0.4-0.6): Lofi, synthwave - balanced presence
+- Low width (0.2-0.4): MIDI, chiptune - old-school mono feel
 
 ---
 

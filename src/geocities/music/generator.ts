@@ -80,6 +80,13 @@ let vinylCrackleGain: GainNode | null = null;
 let bitcrusherNode: WaveShaperNode | null = null;
 let bitcrusherMix: GainNode | null = null;
 let cleanMix: GainNode | null = null;
+// Chorus/reverb effect nodes (for dynamic updates)
+let chorusDepthL: GainNode | null = null;
+let chorusDepthR: GainNode | null = null;
+let chorusMixGain: GainNode | null = null;
+let chorusDryGain: GainNode | null = null;
+let reverbMixGain: GainNode | null = null;
+let reverbDryGain: GainNode | null = null;
 // Background audio support (browsers throttle/suspend JS in background tabs)
 let mediaStreamDest: MediaStreamAudioDestinationNode | null = null;
 let backgroundAudioElement: HTMLAudioElement | null = null;
@@ -306,9 +313,19 @@ function getContext() {
 		delayFeedback.connect(delayNode);
 		delayNode.connect(effectsGain);
 
-		// Output
-		effectsGain.connect(analyser);
+		// Chorus and Reverb chain (initialized off, updated per-song)
+		const chorusReverb = createChorusReverbChain(ctx, 0, 0);
+		effectsGain.connect(chorusReverb.input);
+		chorusReverb.output.connect(analyser);
 		analyser.connect(ctx.destination);
+
+		// Store nodes for dynamic updates
+		chorusDepthL = chorusReverb.chorusDepthL ?? null;
+		chorusDepthR = chorusReverb.chorusDepthR ?? null;
+		chorusMixGain = chorusReverb.chorusMixGain ?? null;
+		chorusDryGain = chorusReverb.chorusDryGain ?? null;
+		reverbMixGain = chorusReverb.reverbMixGain ?? null;
+		reverbDryGain = chorusReverb.reverbDryGain ?? null;
 
 		// Background audio support
 		// Route audio through a MediaStream → <audio> element to help maintain playback
@@ -349,6 +366,136 @@ function getContext() {
 function noteToFreq(note: number) {
 	// note 0 = C4 (middle C)
 	return 261.63 * 2 ** (note / 12);
+}
+
+/**
+ * Create an impulse response for convolution reverb.
+ * Generates a simple algorithmic reverb tail.
+ */
+function createReverbImpulse(
+	audioContext: BaseAudioContext,
+	duration = 2,
+	decay = 2,
+): AudioBuffer {
+	const sampleRate = audioContext.sampleRate;
+	const length = sampleRate * duration;
+	const buffer = audioContext.createBuffer(2, length, sampleRate);
+	const leftChannel = buffer.getChannelData(0);
+	const rightChannel = buffer.getChannelData(1);
+
+	for (let i = 0; i < length; i++) {
+		// Exponential decay
+		const envelope = (1 - i / length) ** decay;
+		// Add some randomness for diffusion
+		leftChannel[i] = (Math.random() * 2 - 1) * envelope;
+		rightChannel[i] = (Math.random() * 2 - 1) * envelope;
+	}
+
+	return buffer;
+}
+
+export type ChorusReverbChain = {
+	input: GainNode;
+	output: GainNode;
+	// For live playback: expose nodes for dynamic updates
+	chorusDepthL?: GainNode;
+	chorusDepthR?: GainNode;
+	chorusMixGain?: GainNode;
+	chorusDryGain?: GainNode;
+	reverbMixGain?: GainNode;
+	reverbDryGain?: GainNode;
+};
+
+/**
+ * Create chorus and reverb effects chain.
+ * Shared between live playback (generator.ts) and offline export (recorder.ts).
+ */
+export function createChorusReverbChain(
+	ctx: BaseAudioContext,
+	chorusDepth: number,
+	reverbMix: number,
+): ChorusReverbChain {
+	// Input node
+	const input = ctx.createGain();
+	input.gain.value = 1;
+
+	// Output node
+	const output = ctx.createGain();
+	output.gain.value = 1;
+
+	// ============================================
+	// Chorus Effect (stereo modulated delay)
+	// ============================================
+	const chorusDelayL = ctx.createDelay(0.1);
+	const chorusDelayR = ctx.createDelay(0.1);
+	chorusDelayL.delayTime.value = 0.02;
+	chorusDelayR.delayTime.value = 0.025;
+
+	const chorusLfoL = ctx.createOscillator();
+	const chorusLfoR = ctx.createOscillator();
+	chorusLfoL.type = "sine";
+	chorusLfoR.type = "sine";
+	chorusLfoL.frequency.value = 0.5;
+	chorusLfoR.frequency.value = 0.6;
+
+	const chorusDepthL = ctx.createGain();
+	const chorusDepthR = ctx.createGain();
+	const chorusModAmount = chorusDepth * 0.005;
+	chorusDepthL.gain.value = chorusModAmount;
+	chorusDepthR.gain.value = chorusModAmount;
+
+	chorusLfoL.connect(chorusDepthL);
+	chorusLfoR.connect(chorusDepthR);
+	chorusDepthL.connect(chorusDelayL.delayTime);
+	chorusDepthR.connect(chorusDelayR.delayTime);
+	chorusLfoL.start();
+	chorusLfoR.start();
+
+	const chorusMixGain = ctx.createGain();
+	chorusMixGain.gain.value = chorusDepth * 0.5;
+	const chorusDryGain = ctx.createGain();
+	chorusDryGain.gain.value = 1 - chorusDepth * 0.2;
+
+	const stereoMerger = ctx.createChannelMerger(2);
+
+	input.connect(chorusDryGain);
+	input.connect(chorusDelayL);
+	input.connect(chorusDelayR);
+	chorusDelayL.connect(stereoMerger, 0, 0);
+	chorusDelayR.connect(stereoMerger, 0, 1);
+	stereoMerger.connect(chorusMixGain);
+
+	// ============================================
+	// Reverb Effect (convolution)
+	// ============================================
+	const reverbNode = ctx.createConvolver();
+	reverbNode.buffer = createReverbImpulse(ctx, 2.5, 2.5);
+
+	const reverbMixGain = ctx.createGain();
+	reverbMixGain.gain.value = reverbMix;
+	const reverbDryGain = ctx.createGain();
+	reverbDryGain.gain.value = 1 - reverbMix * 0.3;
+
+	chorusDryGain.connect(reverbDryGain);
+	chorusMixGain.connect(reverbDryGain);
+	chorusDryGain.connect(reverbNode);
+	chorusMixGain.connect(reverbNode);
+	reverbNode.connect(reverbMixGain);
+
+	// Output
+	reverbDryGain.connect(output);
+	reverbMixGain.connect(output);
+
+	return {
+		input,
+		output,
+		chorusDepthL,
+		chorusDepthR,
+		chorusMixGain,
+		chorusDryGain,
+		reverbMixGain,
+		reverbDryGain,
+	};
 }
 
 /**
@@ -409,6 +556,8 @@ function loadSongInternal(song: Song) {
 	}
 	updateVinylNoise();
 	updateBitcrusher();
+	updateReverb();
+	updateChorus();
 
 	// Prepare what's coming next (for "Next up" display)
 	prepareNextItem(song.tempo);
@@ -820,6 +969,9 @@ function generateSong(visualState: VisualState, targetTempo?: number): Song {
 	const portamento = pickFromRange(genre.portamentoRange);
 	const wowFlutter = pickFromRange(genre.wowFlutterRange);
 	const pwmDepth = pickFromRange(genre.pwmDepthRange);
+	const reverbMix = pickFromRange(genre.reverbRange);
+	const chorusDepth = pickFromRange(genre.chorusRange);
+	const stereoWidth = pickFromRange(genre.stereoWidthRange);
 
 	// Generate patterns for each unique section type
 	// Use the MAXIMUM bar count for each type to ensure patterns cover all instances
@@ -870,6 +1022,9 @@ function generateSong(visualState: VisualState, targetTempo?: number): Song {
 		portamento,
 		wowFlutter,
 		pwmDepth,
+		reverbMix,
+		chorusDepth,
+		stereoWidth,
 	};
 }
 
@@ -975,6 +1130,62 @@ function stopVinylNoise() {
 		}
 		vinylNoiseSource = null;
 	}
+}
+
+/**
+ * Update reverb mix level based on current song.
+ */
+function updateReverb() {
+	if (!reverbMixGain || !reverbDryGain || !ctx) return;
+	const currentSong = getCurrentSong();
+	if (!currentSong) {
+		reverbMixGain.gain.value = 0;
+		reverbDryGain.gain.value = 1;
+		return;
+	}
+
+	const now = ctx.currentTime;
+	const wetLevel = currentSong.reverbMix;
+
+	// Smooth transition
+	reverbMixGain.gain.linearRampToValueAtTime(wetLevel, now + 0.3);
+	// Reduce dry slightly when reverb is high to prevent volume buildup
+	reverbDryGain.gain.linearRampToValueAtTime(1 - wetLevel * 0.3, now + 0.3);
+}
+
+/**
+ * Update chorus depth based on current song.
+ */
+function updateChorus() {
+	if (
+		!chorusDepthL ||
+		!chorusDepthR ||
+		!chorusMixGain ||
+		!chorusDryGain ||
+		!ctx
+	)
+		return;
+	const currentSong = getCurrentSong();
+	if (!currentSong) {
+		chorusDepthL.gain.value = 0;
+		chorusDepthR.gain.value = 0;
+		chorusMixGain.gain.value = 0;
+		chorusDryGain.gain.value = 1;
+		return;
+	}
+
+	const now = ctx.currentTime;
+	const depth = currentSong.chorusDepth;
+
+	// Chorus depth controls LFO modulation amount (in seconds)
+	// At max depth (1.0), modulate delay by up to 5ms
+	const modAmount = depth * 0.005;
+	chorusDepthL.gain.linearRampToValueAtTime(modAmount, now + 0.3);
+	chorusDepthR.gain.linearRampToValueAtTime(modAmount, now + 0.3);
+
+	// Wet/dry mix
+	chorusMixGain.gain.linearRampToValueAtTime(depth * 0.5, now + 0.3);
+	chorusDryGain.gain.linearRampToValueAtTime(1 - depth * 0.2, now + 0.3);
 }
 
 // Update vinyl noise level based on genre and post age
@@ -1154,6 +1365,8 @@ function handleSongEnded(song: Song): void {
 			}
 			updateVinylNoise();
 			updateBitcrusher();
+			updateReverb();
+			updateChorus();
 			prepareNextItem(newDeck.song.tempo);
 		}
 	} else if (isAutomixEnabled() && nextItem) {
@@ -1536,6 +1749,8 @@ export function nextTrack() {
 	}
 	updateVinylNoise();
 	updateBitcrusher();
+	updateReverb();
+	updateChorus();
 	clearDelayBuffer();
 
 	// Announce the first section
@@ -1620,6 +1835,10 @@ export function play() {
 
 	// Apply bitcrusher for chiptune/midi
 	updateBitcrusher();
+
+	// Apply reverb and chorus effects
+	updateReverb();
+	updateChorus();
 
 	// Start background audio element to help maintain playback in background tabs
 	if (backgroundAudioElement) {

@@ -20,6 +20,9 @@ export const genres: Record<GenreType, Genre> = {
 		portamentoRange: [0, 0], // No glide - rigid 8-bit style
 		wowFlutterRange: [0, 0], // No wobble
 		pwmDepthRange: [0.1, 0.25], // Classic PWM for that C64 sound
+		reverbRange: [0, 0.1], // Minimal reverb - clean digital sound
+		chorusRange: [0, 0.05], // Very slight chorus if any
+		stereoWidthRange: [0.3, 0.5], // Some stereo spread for arps
 		transitions: ["drop", "hardcut"],
 		buildTypes: ["acceleratingSnare", "tomCascade"],
 	},
@@ -44,6 +47,9 @@ export const genres: Record<GenreType, Genre> = {
 		portamentoRange: [0.08, 0.2], // Slow, dreamy glides
 		wowFlutterRange: [0.05, 0.15], // Subtle organic drift
 		pwmDepthRange: [0, 0], // Sine/triangle don't use PWM
+		reverbRange: [0.4, 0.7], // Lots of reverb - spacious and atmospheric
+		chorusRange: [0.2, 0.4], // Moderate chorus for shimmer
+		stereoWidthRange: [0.7, 1.0], // Wide stereo for immersion
 		transitions: ["crossfade", "echo"],
 		buildTypes: ["sparseToDense", "tomCascade"],
 	},
@@ -68,6 +74,9 @@ export const genres: Record<GenreType, Genre> = {
 		portamentoRange: [0.03, 0.08], // Smooth synth glides
 		wowFlutterRange: [0, 0.05], // Very subtle analog drift
 		pwmDepthRange: [0.2, 0.4], // Animated pulse width for movement
+		reverbRange: [0.25, 0.45], // Moderate reverb - 80s gated feel
+		chorusRange: [0.3, 0.5], // Classic synthwave chorus for lush pads
+		stereoWidthRange: [0.5, 0.8], // Wide stereo for that cinematic feel
 		transitions: ["filterSweep", "beatmatch"],
 		buildTypes: ["acceleratingSnare", "sparseToDense", "tomCascade"],
 	},
@@ -98,6 +107,9 @@ export const genres: Record<GenreType, Genre> = {
 		portamentoRange: [0.02, 0.06], // Slight jazzy slides
 		wowFlutterRange: [0.15, 0.35], // That worn cassette wobble
 		pwmDepthRange: [0, 0], // Triangle/sine don't use PWM
+		reverbRange: [0.15, 0.3], // Subtle room reverb - intimate feel
+		chorusRange: [0.1, 0.25], // Slight chorus for warmth
+		stereoWidthRange: [0.4, 0.6], // Moderate stereo - cozy not huge
 		transitions: ["crossfade", "filterSweep"],
 		buildTypes: ["sparseToDense", "tomCascade"],
 	},
@@ -130,6 +142,9 @@ export const genres: Record<GenreType, Genre> = {
 		portamentoRange: [0, 0.02], // Very minimal, tight
 		wowFlutterRange: [0, 0], // Clean and precise
 		pwmDepthRange: [0.15, 0.35], // Moving pulse for acid sounds
+		reverbRange: [0.1, 0.25], // Short reverb - warehouse feel
+		chorusRange: [0.05, 0.15], // Minimal chorus - keep it tight
+		stereoWidthRange: [0.3, 0.6], // Some width but focused
 		transitions: ["beatmatch", "filterSweep", "drop"],
 		buildTypes: ["acceleratingSnare", "sparseToDense"],
 	},
@@ -147,6 +162,9 @@ export const genres: Record<GenreType, Genre> = {
 		portamentoRange: [0.04, 0.1], // Iconic trance lead glides
 		wowFlutterRange: [0, 0], // Clean digital sound
 		pwmDepthRange: [0.2, 0.45], // Super saw movement
+		reverbRange: [0.3, 0.5], // Big reverb for epic builds
+		chorusRange: [0.35, 0.55], // Heavy chorus for supersaw thickness
+		stereoWidthRange: [0.6, 0.9], // Wide stereo for that epic sound
 		transitions: ["beatmatch", "filterSweep"],
 		buildTypes: ["acceleratingSnare", "sparseToDense"],
 	},
@@ -167,6 +185,9 @@ export const genres: Record<GenreType, Genre> = {
 		portamentoRange: [0, 0], // No glide - rigid GM sound
 		wowFlutterRange: [0, 0], // Clean digital
 		pwmDepthRange: [0, 0.1], // Minimal PWM
+		reverbRange: [0.05, 0.15], // Very dry - classic GM reverb
+		chorusRange: [0, 0.1], // Minimal or none
+		stereoWidthRange: [0.2, 0.4], // Narrow stereo - old school
 		transitions: ["hardcut"],
 		buildTypes: ["acceleratingSnare", "tomCascade"],
 	},
@@ -184,6 +205,9 @@ export const genres: Record<GenreType, Genre> = {
 		portamentoRange: [0.01, 0.03], // Quick pitch bends
 		wowFlutterRange: [0, 0], // Clean and bright
 		pwmDepthRange: [0.15, 0.3], // Animated leads
+		reverbRange: [0.2, 0.35], // Some reverb for energy
+		chorusRange: [0.2, 0.4], // Chorus for that bright shimmery sound
+		stereoWidthRange: [0.5, 0.8], // Wide for that euphoric feel
 		transitions: ["drop", "beatmatch"],
 		buildTypes: ["acceleratingSnare", "sparseToDense"],
 	},
@@ -207,6 +231,9 @@ export const genres: Record<GenreType, Genre> = {
 		portamentoRange: [0.1, 0.25], // Slow, dreamy glides
 		wowFlutterRange: [0.25, 0.5], // Heavy tape warble
 		pwmDepthRange: [0, 0], // Sine/triangle don't use PWM
+		reverbRange: [0.35, 0.6], // Big reverb - mall muzak in empty spaces
+		chorusRange: [0.3, 0.5], // Heavy chorus for that detuned shimmer
+		stereoWidthRange: [0.6, 0.9], // Wide stereo for dreaminess
 		transitions: ["echo", "crossfade"],
 		buildTypes: ["sparseToDense", "tomCascade"],
 	},

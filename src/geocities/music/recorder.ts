@@ -1,4 +1,5 @@
 import { STEPS_PER_BAR } from "./data";
+import { createChorusReverbChain } from "./generator";
 import {
 	createSynthContext,
 	playArp,
@@ -65,14 +66,22 @@ export async function renderSongToBuffer(
 	filterNode.frequency.value = song.filterCutoff;
 	filterNode.Q.value = 0.5;
 
-	// Connect effects
+	// Connect basic effects
 	masterGain.connect(filterNode);
 	filterNode.connect(effectsGain);
 	filterNode.connect(delayNode);
 	delayNode.connect(delayFeedback);
 	delayFeedback.connect(delayNode);
 	delayNode.connect(effectsGain);
-	effectsGain.connect(ctx.destination);
+
+	// Chorus and Reverb chain (shared with live playback)
+	const chorusReverb = createChorusReverbChain(
+		ctx,
+		song.chorusDepth,
+		song.reverbMix,
+	);
+	effectsGain.connect(chorusReverb.input);
+	chorusReverb.output.connect(ctx.destination);
 
 	// Create synth context for shared synthesis
 	// Note: sidechain is null for offline rendering (no ducking needed)

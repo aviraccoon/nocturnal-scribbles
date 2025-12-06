@@ -277,6 +277,12 @@ export type Genre = {
 	wowFlutterRange: [number, number];
 	// PWM depth for square waves (0 = static, 1 = full modulation)
 	pwmDepthRange: [number, number];
+	// Reverb mix (0 = dry, 1 = full wet) - adds space and depth
+	reverbRange: [number, number];
+	// Chorus depth (0 = off, 1 = heavy) - thickens pads and leads
+	chorusRange: [number, number];
+	// Stereo width (0 = mono, 1 = full stereo spread)
+	stereoWidthRange: [number, number];
 	// Automix transition styles (one is picked randomly)
 	transitions: TransitionStyle[];
 	// Multi-bar build types for tension builds before drops
@@ -303,6 +309,10 @@ export type Song = {
 	portamento: number;
 	wowFlutter: number;
 	pwmDepth: number;
+	// Effects
+	reverbMix: number;
+	chorusDepth: number;
+	stereoWidth: number;
 };
 
 /** Tracks the current state of a playing section */

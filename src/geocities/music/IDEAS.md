@@ -22,6 +22,37 @@ Physical dial UI to tune between stations. Static between frequencies. Signal cl
 
 ---
 
+## New Genres
+
+Genres that fit the 90s web aesthetic and are achievable with oscillator synthesis:
+
+| Genre | Energy | Brightness | Character |
+|-------|--------|------------|-----------|
+| Rock/Metal | +0.7 | -0.5 | Distorted power chords, palm mutes, big snare |
+| Drum & Bass | +0.8 | -0.4 | Fast breaks (170 BPM), heavy sub |
+| Trip-Hop | -0.6 | -0.5 | Slow breaks, moody, Portishead vibes |
+| Eurodance | +0.7 | +0.5 | 90s club, very synthy |
+| Industrial | +0.8 | -0.8 | Aggressive, noisy, NIN territory |
+| Gabber | +1.0 | -0.7 | Distorted kicks, 180+ BPM, maximum chaos |
+| Ska-Punk | +0.6 | +0.4 | Offbeat stabs, brass-like synths |
+| Acid | +0.5 | -0.3 | 303 squelch, resonant filter sweeps |
+
+### Rock/Metal Specifics
+
+- Power chord voicings (root + fifth + octave)
+- Palm-muted chugging (16th notes, short envelope + LP filter)
+- Drop-D tuning feel with low root notes
+- Gated reverb snare (very 90s)
+- Structure: verse-chorus with breakdowns
+
+### Acid Specifics
+
+- 303-style bass: saw + resonant filter with envelope
+- Filter accent on certain steps
+- Classic acid patterns: 16th note sequences with rests
+
+---
+
 ## Sound Design
 
 ### New Tracks / Layers
@@ -43,28 +74,139 @@ Physical dial UI to tune between stations. Static between frequencies. Signal cl
 
 ### Synthesis Enhancements
 
-- **FM Synthesis** - Metallic, bell-like tones. Great for spooky phrygian mode detection
-- **Unison Detune** - Stack multiple detuned oscillators for super saws
-- **Ring Modulation** - Metallic, atonal textures
-- **Noise Oscillator** - White/pink noise as a sound source, not just drums
+**Synthesis Types:**
+- **FM Synthesis** - Metallic, bell-like tones (DX7 style)
+- **Additive Synthesis** - Build sounds from individual sine harmonics
+- **Physical Modeling** - Karplus-Strong plucked strings, blown tubes, struck objects
 - **Wavetable** - Morph between waveforms over time
+- **Vector Synthesis** - Joystick-style morphing between 4 waveforms
+- **Phase Distortion** - Casio CZ-style waveshaping
+- **Granular Synthesis** - Clouds of tiny sound grains
+- **Supersaw** - Dedicated multiple detuned sawtooth stack (not just detune parameter)
+
+**Oscillator Features:**
+- **Hard Sync** - Slave oscillator reset by master (aggressive timbres)
+- **Sub Oscillator** - Octave-down layer for bass weight
+- **Noise Types** - Pink, brown, blue noise (not just white)
+- **Wavefolding** - Fold waveforms back on themselves (West Coast style)
+- **Wave Morphing** - Smooth interpolation between wave shapes
+- **Ring Modulation** - Multiply two oscillators for metallic tones
+- **Formant Oscillator** - Vowel-like tones built into the oscillator
+
+**Filter Types:**
+- **State Variable Filter** - Morphable LP/HP/BP/Notch
+- **Ladder Filter** - Moog-style resonant lowpass
+- **Comb Filter** - Metallic resonances, Karplus-Strong basis
+- **Formant Filter** - Vowel shaping (a-e-i-o-u)
+- **Filter FM** - Audio-rate filter modulation for aggression
+- **Parallel/Serial Filters** - Multiple filter routing options
+- **Self-oscillating Filter** - Filter as a sound source
+
+**Modulation Sources:**
+- **Multiple LFOs** - More than one modulation source
+- **Step Sequencer Mod** - Rhythmic parameter automation
+- **Sample & Hold** - Random stepped modulation
+- **Envelope Follower** - React to audio dynamics
+- **Mod Matrix** - Flexible source-to-destination routing
+- **Audio-rate Modulation** - Oscillators modulating parameters
+- **Chaos/Random** - Lorenz attractor, noise-based modulation
+
+**Envelope Enhancements:**
+- **Multi-stage Envelopes** - DAHDSR or more complex shapes
+- **Looping Envelopes** - Repeat for rhythmic effects
+- **Curve Controls** - Exponential, logarithmic, S-curve options
+- **Per-stage Curves** - Different curve per ADSR segment
+- **Envelope Retrigger Modes** - Reset behavior options
+
+**Voice Architecture:**
+- **True Polyphony** - Independent voice management
+- **Unison Modes** - Stack voices with spread
+- **Legato Modes** - Mono with held envelope
+- **Chord Memory** - Play chords from single notes
+- **Voice Stealing Modes** - How to handle voice overflow
+- **MPE Support** - Per-note expression (pitch bend, pressure)
+
+**Tuning & Pitch:**
+- **Microtuning** - Non-12TET scales (quarter tones, etc.)
+- **Just Intonation** - Pure harmonic ratios
+- **Scala File Support** - Load custom tunings
+- **Pitch Drift** - Analog-style tuning instability
+- **Octave Stretching** - Piano-style inharmonicity
+
+**Special:**
+- **Feedback Loops** - Route output back to input
+- **Cross-modulation** - Oscillators modulating each other
+- **Bit Manipulation** - Bitwise XOR, AND on waveforms
+- **Circuit Bending** - Intentional glitches and errors
+- **Analog Modeling** - Component-level simulation (caps, resistors)
+- **DC Offset Control** - For asymmetric waveforms
 
 ### Effects
 
-- **Reverb** - Convolution or algorithmic reverb for space
-- **Chorus** - Thicken pads and leads
-- **Flanger/Phaser** - Swooshy modulation effects
-- **Distortion/Overdrive** - Warm saturation or harsh clipping
+**Modulation:**
+- **Flanger** - Jet-like swooshing via short modulated delay
+- **Phaser** - Sweeping notch filters for movement
+- **Tremolo** - Volume LFO modulation (classic synth effect)
+- **Auto-pan** - Stereo position modulation
+- **Ring Modulation** - Metallic, atonal textures
+- **Rotary/Leslie** - Spinning speaker simulation (great for pads)
+
+**Distortion:**
+- **Overdrive** - Warm tube-style saturation
+- **Distortion** - Harder clipping for edge
+- **Fuzz** - Extreme square-wave clipping
+- **Tape Saturation** - Warm analog compression and harmonics
+- **Waveshaper** - Custom distortion curves
+- **Exciter/Enhancer** - Add high-frequency harmonics for presence
+
+**Dynamics:**
 - **Compressor** - Glue the mix together, add punch
-- **Stereo Widener** - Pan and stereo effects (currently mono)
+- **Limiter** - Prevent clipping on master output
+- **Multiband Compressor** - Different compression per frequency band
+- **Gate/Noise Gate** - Cut audio below threshold
+- **Transient Shaper** - Control attack/sustain independently
+- **Ducker** - More sophisticated sidechain compression
+
+**Frequency:**
+- **Parametric EQ** - Per-genre frequency shaping
+- **Graphic EQ** - Visual frequency bands
+- **Wah** - Swept resonant bandpass filter
+- **Formant Filter** - Vowel-like sounds (a-e-i-o-u)
+- **Comb Filter** - Metallic resonances
+- **Tilt EQ** - Simple bright/dark control
+
+**Delay:**
+- **Ping Pong Delay** - Stereo bouncing delay
+- **Tape Delay** - Warped delay with wow/flutter degradation
+- **Multi-tap Delay** - Multiple delay taps at different times
+- **Ducking Delay** - Delay that quiets when input is present
+- **Reverse Delay** - Backwards echoes
+
+**Reverb Variants:**
+- **Shimmer Reverb** - Pitch-shifted reverb tails (ethereal)
+- **Gated Reverb** - 80s style abrupt cutoff
+- **Spring Reverb** - Twangy, lo-fi character
+- **Plate Reverb** - Dense, smooth tails
+- **Reverse Reverb** - Swells into notes
+
+**Pitch:**
 - **Pitch Shifter** - Octave up/down layers
+- **Harmonizer** - Add harmony notes at intervals
+- **Octaver** - Dedicated octave up/down
+- **Detune** - Slight pitch offset for thickness
+
+**Spectral/Experimental:**
 - **Granular** - Glitchy, stuttery textures from audio grains
+- **Spectral Freeze** - Sustain a moment indefinitely
+- **Vocoder** - Robot voice synthesis
+- **Convolution** - Use any sound as reverb impulse
+- **Spectral Delay** - Different delays per frequency
+- **Frequency Shifter** - Shift frequencies (not pitch) for weird effects
 
 ### Lo-Fi Treatments
 
 - **Dusty EQ** - Roll off highs, boost low-mids
 - **Record Skip** - Occasional loop/stutter glitch
-- **Degraded Bit Depth** - 8-bit or 12-bit quantization
 
 ---
 
@@ -75,6 +217,11 @@ Physical dial UI to tune between stations. Static between frequencies. Signal cl
 - **Question/Answer Phrasing** - Musical punctuation (more sophisticated than current call/response)
 - **Metric Modulation** - Tempo feels like it changes
 - **Rubato** - Expressive timing freedom
+
+### Drum Patterns (Future)
+
+- **Blast Beats** - Very fast alternating kick/snare (metal)
+- **Ghost Notes** - Quiet snare hits between main beats (funk/groove)
 
 ---
 
@@ -293,8 +440,6 @@ No user tracking required - all based on time, input, or page content.
 
 ### Do Eventually (Medium Impact)
 - More visualizer modes
-- Reverb effect
-- Stereo panning
 - Station special effects (PIRATE RADIO glitches, THE VOID processing)
 - Time-locked stations
 - Texture/atmosphere layer
