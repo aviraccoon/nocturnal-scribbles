@@ -21,10 +21,11 @@ This document explains the technical architecture of the Geocities Music Player.
 8. [FX & Risers](#fx--risers)
 9. [Rhythmic Pads](#rhythmic-pads)
 10. [Multi-Bar Builds](#multi-bar-builds)
-11. [Dusty Archives Effect](#dusty-archives-effect)
-12. [Radio: DJs, Jingles & Commercials](#radio-djs-jingles--commercials)
-13. [Export: WAV & MIDI](#export-wav--midi)
-14. [File Reference](#file-reference)
+11. [Synth Enhancements](#synth-enhancements)
+12. [Dusty Archives Effect](#dusty-archives-effect)
+13. [Radio: DJs, Jingles & Commercials](#radio-djs-jingles--commercials)
+14. [Export: WAV & MIDI](#export-wav--midi)
+15. [File Reference](#file-reference)
 
 ---
 
@@ -454,6 +455,98 @@ Bar 4:  [XXXXXXXXXXXXXXXX]  (16th note roll with crescendo)
 - Regular snare patterns skip during build zone
 - Single-bar fills skip when multi-bar build is active
 - Kick and hi-hat continue normally for groove continuity
+
+---
+
+## Synth Enhancements
+
+### ELI5
+
+Ever notice how real synthesizers sound alive? Notes don't just go "BEEP" - they slide into each other like a singer going "wheeeEEEE". Old tape players wobble a little because the motor isn't perfect. And those fat 80s synth sounds? That's the robot wiggling the sound wave back and forth really fast. The music robot does all of this now!
+
+### Technical
+
+Three synthesis enhancements add movement and character to the oscillator-based sound:
+
+#### Portamento (Glide)
+
+Notes slide from one pitch to the next instead of jumping instantly. Classic synth lead sound.
+
+**Implementation (`synths.ts`):**
+```
+lastMelodyFreq → stored between notes
+New note starts at lastMelodyFreq
+exponentialRampToValueAtTime() glides to target frequency
+Glide time capped at 50% of note duration
+```
+
+**Genre Portamento Times:**
+
+| Genre | Glide Time | Character |
+|-------|-----------|-----------|
+| Vaporwave | 0.1-0.25s | Slow, dreamy slides |
+| Trance | 0.04-0.1s | Iconic lead glides |
+| Ambient | 0.08-0.2s | Ethereal drifts |
+| Synthwave | 0.03-0.08s | Smooth synth feel |
+| Lofi | 0.02-0.06s | Subtle jazzy slides |
+| Happycore | 0.01-0.03s | Quick pitch bends |
+| Techno | 0-0.02s | Tight, minimal |
+| Chiptune/MIDI | 0 | Rigid, no glide |
+
+#### Wow and Flutter
+
+Simulates the pitch instability of worn tape machines. Two LFOs modulate oscillator detune:
+
+**Wow (slow drift):**
+- Frequency: 0.3-0.8 Hz (like a warped record)
+- Depth: up to 30 cents at max flutter
+- Creates that "underwater" vaporwave feel
+
+**Flutter (fast wobble):**
+- Frequency: 4-8 Hz (motor irregularity)
+- Depth: up to 8 cents at max flutter
+- Adds subtle organic movement
+
+**Genre Wow/Flutter Amounts:**
+
+| Genre | Amount | Vibe |
+|-------|--------|------|
+| Vaporwave | 0.25-0.5 | Heavy tape warble |
+| Lofi | 0.15-0.35 | Worn cassette wobble |
+| Ambient | 0.05-0.15 | Subtle organic drift |
+| Synthwave | 0-0.05 | Hint of analog |
+| Others | 0 | Clean digital |
+
+#### PWM (Pulse Width Modulation)
+
+Animates the duty cycle of square waves for that classic moving synth sound. Since Web Audio doesn't have native PWM, it's simulated:
+
+**Technique:**
+```
+osc1: square wave at frequency
+osc2: square wave at same frequency, inverted gain
+PWM LFO (0.5-2 Hz triangle) modulates osc2 detune
+Phase relationship changes → apparent pulse width changes
+```
+
+**The Result:**
+- Mixing two squares with varying phase creates a "hollow" to "full" sweep
+- Triangle LFO gives smooth, even modulation
+- PWM depth controls how dramatic the sweep is (up to 50 cents detune)
+
+**Genre PWM Depths:**
+
+| Genre | PWM Depth | Sound |
+|-------|----------|-------|
+| Trance | 0.2-0.45 | Super saw movement |
+| Synthwave | 0.2-0.4 | Animated pads/leads |
+| Techno | 0.15-0.35 | Acid-style movement |
+| Happycore | 0.15-0.3 | Bright animated leads |
+| Chiptune | 0.1-0.25 | Classic C64 PWM |
+| MIDI | 0-0.1 | Minimal movement |
+| Sine/Triangle genres | 0 | N/A (only for square waves) |
+
+**Note:** All three enhancements are applied per-note and respect the current song's randomly-selected parameters from genre ranges. Portamento state resets when switching songs to prevent weird glides between tracks.
 
 ---
 

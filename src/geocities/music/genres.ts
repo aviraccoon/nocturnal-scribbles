@@ -17,6 +17,9 @@ export const genres: Record<GenreType, Genre> = {
 		detuneRange: [0, 2], // Slight variation, mostly straight
 		attackRange: [0.003, 0.008],
 		swingRange: [0, 0.05], // Mostly straight timing for that rigid 8-bit feel
+		portamentoRange: [0, 0], // No glide - rigid 8-bit style
+		wowFlutterRange: [0, 0], // No wobble
+		pwmDepthRange: [0.1, 0.25], // Classic PWM for that C64 sound
 		transitions: ["drop", "hardcut"],
 		buildTypes: ["acceleratingSnare", "tomCascade"],
 	},
@@ -38,6 +41,9 @@ export const genres: Record<GenreType, Genre> = {
 		detuneRange: [5, 12],
 		attackRange: [0.2, 0.4],
 		swingRange: [0.05, 0.15], // Very slight swing for organic feel
+		portamentoRange: [0.08, 0.2], // Slow, dreamy glides
+		wowFlutterRange: [0.05, 0.15], // Subtle organic drift
+		pwmDepthRange: [0, 0], // Sine/triangle don't use PWM
 		transitions: ["crossfade", "echo"],
 		buildTypes: ["sparseToDense", "tomCascade"],
 	},
@@ -59,6 +65,9 @@ export const genres: Record<GenreType, Genre> = {
 		detuneRange: [3, 8],
 		attackRange: [0.01, 0.03],
 		swingRange: [0, 0.08], // Minimal swing
+		portamentoRange: [0.03, 0.08], // Smooth synth glides
+		wowFlutterRange: [0, 0.05], // Very subtle analog drift
+		pwmDepthRange: [0.2, 0.4], // Animated pulse width for movement
 		transitions: ["filterSweep", "beatmatch"],
 		buildTypes: ["acceleratingSnare", "sparseToDense", "tomCascade"],
 	},
@@ -86,6 +95,9 @@ export const genres: Record<GenreType, Genre> = {
 		detuneRange: [8, 16],
 		attackRange: [0.03, 0.08],
 		swingRange: [0.25, 0.4], // Heavy swing for that jazzy lofi feel
+		portamentoRange: [0.02, 0.06], // Slight jazzy slides
+		wowFlutterRange: [0.15, 0.35], // That worn cassette wobble
+		pwmDepthRange: [0, 0], // Triangle/sine don't use PWM
 		transitions: ["crossfade", "filterSweep"],
 		buildTypes: ["sparseToDense", "tomCascade"],
 	},
@@ -115,6 +127,9 @@ export const genres: Record<GenreType, Genre> = {
 		detuneRange: [1, 5],
 		attackRange: [0.005, 0.02],
 		swingRange: [0, 0.03], // Dead straight for machine precision
+		portamentoRange: [0, 0.02], // Very minimal, tight
+		wowFlutterRange: [0, 0], // Clean and precise
+		pwmDepthRange: [0.15, 0.35], // Moving pulse for acid sounds
 		transitions: ["beatmatch", "filterSweep", "drop"],
 		buildTypes: ["acceleratingSnare", "sparseToDense"],
 	},
@@ -129,6 +144,9 @@ export const genres: Record<GenreType, Genre> = {
 		detuneRange: [4, 9],
 		attackRange: [0.005, 0.02],
 		swingRange: [0, 0.03], // Straight timing
+		portamentoRange: [0.04, 0.1], // Iconic trance lead glides
+		wowFlutterRange: [0, 0], // Clean digital sound
+		pwmDepthRange: [0.2, 0.45], // Super saw movement
 		transitions: ["beatmatch", "filterSweep"],
 		buildTypes: ["acceleratingSnare", "sparseToDense"],
 	},
@@ -146,6 +164,9 @@ export const genres: Record<GenreType, Genre> = {
 		detuneRange: [0, 1], // No detune - that thin single-osc sound
 		attackRange: [0.001, 0.005], // Instant attack
 		swingRange: [0, 0.02], // Rigid timing
+		portamentoRange: [0, 0], // No glide - rigid GM sound
+		wowFlutterRange: [0, 0], // Clean digital
+		pwmDepthRange: [0, 0.1], // Minimal PWM
 		transitions: ["hardcut"],
 		buildTypes: ["acceleratingSnare", "tomCascade"],
 	},
@@ -160,6 +181,9 @@ export const genres: Record<GenreType, Genre> = {
 		detuneRange: [2, 6],
 		attackRange: [0.003, 0.01],
 		swingRange: [0, 0.03], // Dead straight for maximum energy
+		portamentoRange: [0.01, 0.03], // Quick pitch bends
+		wowFlutterRange: [0, 0], // Clean and bright
+		pwmDepthRange: [0.15, 0.3], // Animated leads
 		transitions: ["drop", "beatmatch"],
 		buildTypes: ["acceleratingSnare", "sparseToDense"],
 	},
@@ -180,6 +204,9 @@ export const genres: Record<GenreType, Genre> = {
 		detuneRange: [12, 20], // Very detuned for that warped tape feel
 		attackRange: [0.1, 0.2], // Slow attack
 		swingRange: [0.15, 0.25], // Lazy swing
+		portamentoRange: [0.1, 0.25], // Slow, dreamy glides
+		wowFlutterRange: [0.25, 0.5], // Heavy tape warble
+		pwmDepthRange: [0, 0], // Sine/triangle don't use PWM
 		transitions: ["echo", "crossfade"],
 		buildTypes: ["sparseToDense", "tomCascade"],
 	},

@@ -11,6 +11,9 @@ let currentSong: Song | null = null;
 // Switchable output for deck routing - defaults to masterGain
 let synthOutput: AudioNode | null = null;
 
+// Track last melody frequency for portamento (glide between notes)
+let lastMelodyFreq: number | null = null;
+
 /** Initialize the shared audio context for synth playback. Called by generator.ts. */
 export function setSynthContext(
 	context: AudioContext,
@@ -40,6 +43,8 @@ function getOutput(): AudioNode | null {
 /** Set the current song for genre-aware synth parameters. */
 export function setSynthSong(song: Song | null) {
 	currentSong = song;
+	// Reset portamento state when changing songs
+	lastMelodyFreq = null;
 }
 
 /** Get the current song being played. */
@@ -58,9 +63,12 @@ type NoteOptions = {
 	detune?: number; // Detune amount in cents (0 = no detune)
 	attack?: number; // Attack time in seconds
 	vibrato?: boolean; // Add vibrato to sustained notes
+	portamento?: number; // Glide time in seconds (0 = instant)
+	wowFlutter?: number; // Tape wobble amount (0-1)
+	pwmDepth?: number; // Pulse width modulation depth (0-1)
 };
 
-/** Play a melodic note with optional detuning and vibrato for richer sound. */
+/** Play a melodic note with portamento, wow/flutter, and PWM. */
 export function playNote(
 	freq: number,
 	startTime: number,
@@ -77,12 +85,56 @@ export function playNote(
 	const detuneAmount = opts.detune ?? 0;
 	const attack = opts.attack ?? 0.01;
 	const vibrato = opts.vibrato ?? false;
+	const portamento = opts.portamento ?? 0;
+	const wowFlutter = opts.wowFlutter ?? 0;
+	const pwmDepth = opts.pwmDepth ?? 0;
+
+	// Determine starting frequency for portamento
+	const startFreq = portamento > 0 && lastMelodyFreq ? lastMelodyFreq : freq;
+	lastMelodyFreq = freq; // Update for next note
 
 	// Create main oscillator
 	const osc1 = c.createOscillator();
 	const gain1 = c.createGain();
 	osc1.type = type;
-	osc1.frequency.setValueAtTime(freq, startTime);
+
+	// Apply portamento: glide from last note to current
+	if (portamento > 0 && startFreq !== freq) {
+		osc1.frequency.setValueAtTime(startFreq, startTime);
+		osc1.frequency.exponentialRampToValueAtTime(
+			freq,
+			startTime + Math.min(portamento, duration * 0.5),
+		);
+	} else {
+		osc1.frequency.setValueAtTime(freq, startTime);
+	}
+
+	// Add wow and flutter (tape pitch wobble) via LFO on detune
+	if (wowFlutter > 0) {
+		// Wow: slow drift (0.3-0.8 Hz)
+		const wowLfo = c.createOscillator();
+		const wowGain = c.createGain();
+		wowLfo.type = "sine";
+		wowLfo.frequency.value = 0.3 + Math.random() * 0.5;
+		// Wow affects detune in cents (up to 30 cents at max flutter)
+		wowGain.gain.value = wowFlutter * 30;
+		wowLfo.connect(wowGain);
+		wowGain.connect(osc1.detune);
+		wowLfo.start(startTime);
+		wowLfo.stop(startTime + duration + 0.1);
+
+		// Flutter: faster irregular wobble (4-8 Hz)
+		const flutterLfo = c.createOscillator();
+		const flutterGain = c.createGain();
+		flutterLfo.type = "sine";
+		flutterLfo.frequency.value = 4 + Math.random() * 4;
+		// Flutter is subtler (up to 8 cents at max flutter)
+		flutterGain.gain.value = wowFlutter * 8;
+		flutterLfo.connect(flutterGain);
+		flutterGain.connect(osc1.detune);
+		flutterLfo.start(startTime);
+		flutterLfo.stop(startTime + duration + 0.1);
+	}
 
 	// Add vibrato for sustained notes
 	if (vibrato && duration > 0.3) {
@@ -100,17 +152,94 @@ export function playNote(
 		lfo.stop(startTime + duration + 0.1);
 	}
 
-	// Second detuned oscillator for richness
+	// Second oscillator: either detuned for richness, or PWM partner
 	let osc2: OscillatorNode | undefined;
 	let gain2: GainNode | undefined;
-	if (detuneAmount > 0 && type !== "sine") {
+
+	// PWM: simulate pulse width modulation by mixing two square waves
+	// One inverted with modulated phase offset creates moving pulse width
+	if (pwmDepth > 0 && type === "square") {
+		osc2 = c.createOscillator();
+		gain2 = c.createGain();
+		osc2.type = "square";
+
+		// Apply portamento to osc2 as well
+		if (portamento > 0 && startFreq !== freq) {
+			osc2.frequency.setValueAtTime(startFreq, startTime);
+			osc2.frequency.exponentialRampToValueAtTime(
+				freq,
+				startTime + Math.min(portamento, duration * 0.5),
+			);
+		} else {
+			osc2.frequency.setValueAtTime(freq, startTime);
+		}
+
+		// PWM LFO modulates the detune of osc2
+		// This creates phase offset that varies, simulating PWM
+		const pwmLfo = c.createOscillator();
+		const pwmLfoGain = c.createGain();
+		pwmLfo.type = "triangle"; // Triangle for smooth PWM sweep
+		pwmLfo.frequency.value = 0.5 + Math.random() * 1.5; // 0.5-2 Hz
+		// PWM depth controls how much detune sweep (up to 50 cents)
+		pwmLfoGain.gain.value = pwmDepth * 50;
+		pwmLfo.connect(pwmLfoGain);
+		pwmLfoGain.connect(osc2.detune);
+		pwmLfo.start(startTime);
+		pwmLfo.stop(startTime + duration + 0.1);
+
+		// Invert osc2 and mix with osc1 for PWM effect
+		gain2.gain.setValueAtTime(0, startTime);
+		gain2.gain.linearRampToValueAtTime(-volume * 0.4, startTime + attack);
+		gain2.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
+
+		// Apply wow/flutter to osc2 as well for coherent sound
+		if (wowFlutter > 0) {
+			const wow2 = c.createOscillator();
+			const wowGain2 = c.createGain();
+			wow2.type = "sine";
+			wow2.frequency.value = 0.3 + Math.random() * 0.5;
+			wowGain2.gain.value = wowFlutter * 30;
+			wow2.connect(wowGain2);
+			wowGain2.connect(osc2.detune);
+			wow2.start(startTime);
+			wow2.stop(startTime + duration + 0.1);
+		}
+	} else if (detuneAmount > 0 && type !== "sine") {
+		// Regular detuned oscillator for richness (non-PWM case)
 		osc2 = c.createOscillator();
 		gain2 = c.createGain();
 		osc2.type = type;
-		osc2.frequency.setValueAtTime(freq, startTime);
+
+		if (portamento > 0 && startFreq !== freq) {
+			osc2.frequency.setValueAtTime(startFreq, startTime);
+			osc2.frequency.exponentialRampToValueAtTime(
+				freq,
+				startTime + Math.min(portamento, duration * 0.5),
+			);
+		} else {
+			osc2.frequency.setValueAtTime(freq, startTime);
+		}
+
 		// Random detune within the genre's range
 		const actualDetune = T.rand(-detuneAmount, detuneAmount);
 		osc2.detune.setValueAtTime(actualDetune, startTime);
+
+		// Apply wow/flutter to osc2
+		if (wowFlutter > 0) {
+			const wow2 = c.createOscillator();
+			const wowGain2 = c.createGain();
+			wow2.type = "sine";
+			wow2.frequency.value = 0.3 + Math.random() * 0.5;
+			wowGain2.gain.value = wowFlutter * 30;
+			wow2.connect(wowGain2);
+			wowGain2.connect(osc2.detune);
+			wow2.start(startTime);
+			wow2.stop(startTime + duration + 0.1);
+		}
+
+		gain2.gain.setValueAtTime(0, startTime);
+		gain2.gain.linearRampToValueAtTime(volume * 0.5, startTime + attack);
+		gain2.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
 	}
 
 	// Envelope with configurable attack
@@ -128,9 +257,6 @@ export function playNote(
 	osc1.stop(startTime + duration + 0.1);
 
 	if (osc2 && gain2) {
-		gain2.gain.setValueAtTime(0, startTime);
-		gain2.gain.linearRampToValueAtTime(volume * 0.5, startTime + attack);
-		gain2.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
 		osc2.connect(gain2);
 		gain2.connect(output);
 		osc2.start(startTime);

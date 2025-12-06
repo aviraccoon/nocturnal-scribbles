@@ -728,6 +728,9 @@ function generateSong(visualState: VisualState, targetTempo?: number): Song {
 	const detune = pickFromRange(genre.detuneRange);
 	const attack = pickFromRange(genre.attackRange);
 	const swing = pickFromRange(genre.swingRange);
+	const portamento = pickFromRange(genre.portamentoRange);
+	const wowFlutter = pickFromRange(genre.wowFlutterRange);
+	const pwmDepth = pickFromRange(genre.pwmDepthRange);
 
 	// Generate patterns for each unique section type
 	// Use the MAXIMUM bar count for each type to ensure patterns cover all instances
@@ -775,6 +778,9 @@ function generateSong(visualState: VisualState, targetTempo?: number): Song {
 		detune,
 		attack,
 		swing,
+		portamento,
+		wowFlutter,
+		pwmDepth,
 	};
 }
 
@@ -990,6 +996,9 @@ function scheduleNotesForDeck(deckId: DeckId, isOutgoing: boolean): boolean {
 						detune: chaosDetune,
 						attack: song.attack,
 						vibrato: duration > 0.4,
+						portamento: song.portamento,
+						wowFlutter: song.wowFlutter,
+						pwmDepth: song.pwmDepth,
 					});
 				}
 			}

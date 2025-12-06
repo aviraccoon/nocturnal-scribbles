@@ -271,6 +271,12 @@ export type Genre = {
 	attackRange: [number, number];
 	// Timing feel (0 = straight, 0.5 = full triplet swing)
 	swingRange: [number, number];
+	// Portamento/glide time in seconds (0 = no glide)
+	portamentoRange: [number, number];
+	// Wow and flutter amount (0 = none, 1 = heavy tape wobble)
+	wowFlutterRange: [number, number];
+	// PWM depth for square waves (0 = static, 1 = full modulation)
+	pwmDepthRange: [number, number];
 	// Automix transition styles (one is picked randomly)
 	transitions: TransitionStyle[];
 	// Multi-bar build types for tension builds before drops
@@ -294,6 +300,9 @@ export type Song = {
 	detune: number;
 	attack: number;
 	swing: number;
+	portamento: number;
+	wowFlutter: number;
+	pwmDepth: number;
 };
 
 /** Tracks the current state of a playing section */

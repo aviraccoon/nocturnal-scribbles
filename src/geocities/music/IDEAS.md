@@ -43,9 +43,7 @@ Physical dial UI to tune between stations. Static between frequencies. Signal cl
 
 ### Synthesis Enhancements
 
-- **Portamento/Glide** - Notes slide into each other for synthwave and trance leads
 - **FM Synthesis** - Metallic, bell-like tones. Great for spooky phrygian mode detection
-- **PWM (Pulse Width Modulation)** - Animate square wave duty cycle for movement
 - **Unison Detune** - Stack multiple detuned oscillators for super saws
 - **Ring Modulation** - Metallic, atonal textures
 - **Noise Oscillator** - White/pink noise as a sound source, not just drums
@@ -64,7 +62,6 @@ Physical dial UI to tune between stations. Static between frequencies. Signal cl
 
 ### Lo-Fi Treatments
 
-- **Wow and Flutter** - Subtle pitch wobble like worn tape
 - **Dusty EQ** - Roll off highs, boost low-mids
 - **Record Skip** - Occasional loop/stutter glitch
 - **Degraded Bit Depth** - 8-bit or 12-bit quantization
@@ -295,11 +292,9 @@ No user tracking required - all based on time, input, or page content.
 - Song seed for sharing
 
 ### Do Eventually (Medium Impact)
-- Portamento on leads
 - More visualizer modes
 - Reverb effect
 - Stereo panning
-- Wow and flutter for lofi
 - Station special effects (PIRATE RADIO glitches, THE VOID processing)
 - Time-locked stations
 - Texture/atmosphere layer
