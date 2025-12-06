@@ -1,5 +1,6 @@
 import { musicEvents } from "./events";
 import * as musicGen from "./generator";
+import { getNextUp } from "./generator";
 import { randomizeDJVoice, setLyricsCallback } from "./lyrics";
 import { saveSongAsMIDI } from "./midi";
 import { isInTransition, toggleAutomix } from "./mixer";
@@ -53,6 +54,10 @@ export function addMusicPlayer(
 				</div>
 				<div class="player-lyrics">
 					<marquee class="player-lyrics-text" scrollamount="2">Page-reactive mixtape - Side ${currentTapeSide}</marquee>
+				</div>
+				<div class="player-next-up">
+					<span class="player-next-up-label">Next:</span>
+					<span class="player-next-up-value">--</span>
 				</div>
 				<div class="player-visualizer"></div>
 			</div>
@@ -365,6 +370,23 @@ export function addMusicPlayer(
 				font-size: 9px;
 				white-space: nowrap;
 			}
+			.geocities-music-player .player-next-up {
+				display: flex;
+				flex-wrap: wrap;
+				gap: 2px 4px;
+				font-size: 8px;
+				margin-top: 3px;
+				padding: 2px 0;
+				border-top: 1px dotted #333;
+			}
+			.geocities-music-player .player-next-up-label {
+				color: #666;
+				flex-shrink: 0;
+			}
+			.geocities-music-player .player-next-up-value {
+				color: #0a8;
+				word-break: break-word;
+			}
 			.geocities-music-player .player-mixer {
 				padding: 4px 8px;
 				border-top: 1px solid #444;
@@ -574,6 +596,7 @@ export function addMusicPlayer(
 	const genreEl = player.querySelector(".player-genre");
 	const structureEl = player.querySelector(".player-structure");
 	const sectionEl = player.querySelector(".player-section");
+	const nextUpEl = player.querySelector<HTMLElement>(".player-next-up-value");
 
 	// Info panel elements
 	const drumPatternEl = player.querySelector(".player-drum-pattern");
@@ -656,6 +679,20 @@ export function addMusicPlayer(
 		if (playBtn) {
 			playBtn.textContent = musicGen.getIsPlaying() ? "❚❚" : "▶";
 			playBtn.classList.toggle("playing", musicGen.getIsPlaying());
+		}
+		// Update next up display
+		if (nextUpEl) {
+			const nextUp = getNextUp();
+			if (nextUp) {
+				const text = nextUp.sublabel
+					? `${nextUp.label} (${nextUp.sublabel})`
+					: nextUp.label;
+				nextUpEl.textContent = text;
+				nextUpEl.title = text;
+			} else {
+				nextUpEl.textContent = musicGen.getLoopEnabled() ? "[loop]" : "--";
+				nextUpEl.title = "";
+			}
 		}
 	}
 

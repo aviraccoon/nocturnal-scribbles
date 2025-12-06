@@ -150,8 +150,26 @@ export function queueNext(item: PlayableItem): void {
 	musicEvents.emit({ type: "queueUpdated", queue: [...playbackQueue] });
 }
 
-/** Get the next item without removing it */
+/** Get the next item without removing it (removes duplicates of current song) */
 export function peekNext(): PlayableItem | null {
+	const currentItem = getActiveDeck().item;
+
+	// Remove any queued items that match the currently playing song
+	while (playbackQueue.length > 0) {
+		const next = playbackQueue[0];
+		if (
+			next?.kind === "song" &&
+			currentItem?.kind === "song" &&
+			next.song.trackName === currentItem.song.trackName
+		) {
+			// Same song - remove it from queue
+			playbackQueue.shift();
+			musicEvents.emit({ type: "queueUpdated", queue: [...playbackQueue] });
+		} else {
+			break;
+		}
+	}
+
 	return playbackQueue[0] ?? null;
 }
 

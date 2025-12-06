@@ -49,6 +49,7 @@ import type {
 	Genre,
 	GenreType,
 	Pattern,
+	PlayableItem,
 	ScaleType,
 	Section,
 	SectionState,
@@ -85,6 +86,14 @@ let radioGenres: GenreType[] = []; // Current station's preferred genres
 let loopEnabled = false;
 let chaosLevel = 0.5; // 0-1, affects density, detuning, filter wobble
 let postAgeEffect = 0; // 0-1, dusty tape treatment for old posts
+
+// When mixer transition completes, prepare the next item for the queue
+musicEvents.on("transitionComplete", () => {
+	const song = getCurrentSong();
+	if (song) {
+		prepareNextItem(song.tempo);
+	}
+});
 
 // ============================================
 // Per-Deck Playback State
@@ -320,6 +329,31 @@ function loadSongInternal(song: Song) {
 	}
 	updateVinylNoise();
 	updateBitcrusher();
+
+	// Prepare what's coming next (for "Next up" display)
+	prepareNextItem(song.tempo);
+}
+
+/**
+ * Pre-queue what's coming next after the current song.
+ * This is called when a song starts so the queue has items for "Next up" display.
+ */
+function prepareNextItem(currentTempo?: number) {
+	// Don't prepare if loop is enabled or queue already has items
+	if (loopEnabled || peekNext()) {
+		return;
+	}
+
+	// Determine if we should have a break
+	const breakItem = shouldTriggerBreak(playerMode);
+	if (breakItem) {
+		queueItem(breakItem);
+	}
+
+	// Generate and queue the next song
+	const visualState = sampleVisualState();
+	const nextSong = generateSong(visualState, currentTempo);
+	queueItem({ kind: "song", song: nextSong });
 }
 
 /**
@@ -1073,6 +1107,7 @@ function scheduleNotesForDeck(deckId: DeckId, isOutgoing: boolean): boolean {
 							}
 							updateVinylNoise();
 							updateBitcrusher();
+							prepareNextItem(newDeck.song.tempo);
 						}
 					} else if (isAutomixEnabled() && nextItem) {
 						startTransition(nextItem, true);
@@ -1093,13 +1128,26 @@ function scheduleNotesForDeck(deckId: DeckId, isOutgoing: boolean): boolean {
 							});
 						}
 					} else {
-						const breakItem = shouldTriggerBreak(playerMode);
-						if (breakItem) {
-							playBreak(breakItem).then(() => {
-								const visualState = sampleVisualState();
-								loadSongInternal(generateSong(visualState));
-							});
+						// Use pre-queued items if available
+						const nextItem = peekNext();
+						if (nextItem) {
+							dequeueNext();
+							if (nextItem.kind === "song") {
+								loadSongInternal(nextItem.song);
+							} else {
+								playBreak(nextItem).then(() => {
+									const songItem = peekNext();
+									if (songItem?.kind === "song") {
+										dequeueNext();
+										loadSongInternal(songItem.song);
+									} else {
+										const visualState = sampleVisualState();
+										loadSongInternal(generateSong(visualState));
+									}
+								});
+							}
 						} else {
+							// Fallback: generate on the fly (e.g., loop was just disabled)
 							const visualState = sampleVisualState();
 							loadSongInternal(generateSong(visualState));
 						}
@@ -1225,6 +1273,10 @@ export function generate() {
 	deck.sectionIndex = 0;
 	deck.sectionStep = 0;
 	deck.songEndingEmitted = false;
+
+	// Prepare what's coming next (for "Next up" display)
+	prepareNextItem(song.tempo);
+
 	return song;
 }
 
@@ -1615,4 +1667,63 @@ export function getPattern() {
 		rootNote: noteNames[currentSong.rootNote],
 		tempo: currentSong.tempo,
 	};
+}
+
+/** Info about what's coming up next for display in the player */
+export type NextUpInfo = {
+	kind: PlayableItem["kind"];
+	label: string; // Human-readable label
+	sublabel?: string; // Additional info (e.g., genre for songs)
+};
+
+/** Get info about the next queued item for "Next up" display */
+export function getNextUp(): NextUpInfo | null {
+	if (loopEnabled) return null;
+
+	const nextItem = peekNext();
+	if (!nextItem) return null;
+
+	switch (nextItem.kind) {
+		case "song":
+			return {
+				kind: "song",
+				label: nextItem.song.trackName,
+				sublabel: nextItem.song.genre.name,
+			};
+		case "adBreak": {
+			const count = nextItem.adBreak.commercials.length;
+			return {
+				kind: "adBreak",
+				label: "Commercial Break",
+				sublabel: `${count} ${count === 1 ? "spot" : "spots"}`,
+			};
+		}
+		case "djAnnouncement":
+			return {
+				kind: "djAnnouncement",
+				label: "DJ Break",
+			};
+		case "commercial":
+			return {
+				kind: "commercial",
+				label: "Sponsor Message",
+			};
+		case "jingle":
+			return {
+				kind: "jingle",
+				label: "Station ID",
+			};
+		case "news":
+			return {
+				kind: "news",
+				label: "News Update",
+			};
+		case "silence":
+			return {
+				kind: "silence",
+				label: "...",
+			};
+		default:
+			return null;
+	}
 }
