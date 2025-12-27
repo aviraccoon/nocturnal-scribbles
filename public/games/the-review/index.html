@@ -15,6 +15,18 @@
             min-height: 100vh;
         }
 
+        /* HD font mode for high-DPI displays (toggle in footer) */
+        html.hd-mode,
+        html.hd-mode body,
+        html.hd-mode button,
+        html.hd-mode input,
+        html.hd-mode select,
+        html.hd-mode textarea,
+        html.hd-mode * {
+            font-family: Tahoma, 'Segoe UI', system-ui, sans-serif !important;
+            -webkit-font-smoothing: antialiased;
+        }
+
         .store-container {
             max-width: 940px;
             margin: 0 auto;
@@ -1889,7 +1901,8 @@
         <div class="store-footer">
             © 2025 Nocturnal Scavenger Studios. All rights reserved.<br>
             Life sold as-is. No refunds. Results may vary.<br>
-            Styled with <a href="https://cs16.samke.me">cs16.css</a><br><br>
+            Styled with <a href="https://cs16.samke.me">cs16.css</a>
+            · <a href="#" onclick="toggleHD(event)" id="hd-toggle">HD font</a><br><br>
             <a href="/">raccoon.land</a> · <a href="/games/">games</a> · <a href="/about/">about</a>
         </div>
     </div>
@@ -1897,6 +1910,15 @@
     <div class="easter-egg-hint" id="hint">try clicking things</div>
 
     <script>
+        // HD font toggle
+        function toggleHD(e) {
+            e.preventDefault();
+            document.documentElement.classList.toggle('hd-mode');
+            const link = e.target;
+            const isHD = document.documentElement.classList.contains('hd-mode');
+            link.textContent = isHD ? 'pixel font' : 'HD font';
+        }
+
         // Play button
         document.getElementById('play-btn').addEventListener('click', () => {
             alert('Error: Instance already running.\n\nCannot launch multiple instances of life.exe');
