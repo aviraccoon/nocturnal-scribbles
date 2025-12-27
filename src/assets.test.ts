@@ -221,14 +221,15 @@ describe("assets", () => {
 			expect(copiedContent).toBe(content);
 		});
 
-		test("should skip directories", async () => {
+		test("should copy directories recursively", async () => {
 			const nestedDir = join(publicSource, "subdir");
 			mkdirSync(nestedDir, { recursive: true });
 			writeFileSync(join(nestedDir, "nested.txt"), "nested");
 
 			await copyPublicFiles(publicSource, publicDest);
 
-			expect(existsSync(join(publicDest, "subdir"))).toBe(false);
+			expect(existsSync(join(publicDest, "subdir"))).toBe(true);
+			expect(existsSync(join(publicDest, "subdir", "nested.txt"))).toBe(true);
 		});
 
 		test("should handle empty directory", async () => {
