@@ -13,7 +13,8 @@
       "!!node_modules",
       "!!.claude",
       "!!.obsidian",
-      "!!**/tests/tmp-*"
+      "!!**/tests/tmp-*",
+      "!!**/*.min.css"
     ]
   },
   "formatter": {
