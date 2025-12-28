@@ -8,7 +8,7 @@
     <meta property="og:title" content="A███: The Complete Experience">
     <meta property="og:description" content="You don't choose your starting stats. You can't see your energy bar. The main quest is unclear.">
     <meta property="og:type" content="website">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/ekmas/cs16.css@main/css/cs16.min.css">
+    <link rel="stylesheet" href="cs16.min.css">
     <style>
         body {
             padding: 0;
@@ -805,6 +805,69 @@
             .sys-req {
                 flex-direction: column;
             }
+
+            /* Horizontal scroll tabs on mobile */
+            .tab-bar-wrapper {
+                position: relative;
+                overflow: hidden;
+            }
+
+            .tab-bar-wrapper::after {
+                content: '→';
+                position: absolute;
+                right: 0;
+                top: 0;
+                bottom: 0;
+                display: flex;
+                align-items: center;
+                padding: 0 8px;
+                background: linear-gradient(to right, transparent, var(--bg) 50%);
+                color: var(--text-3);
+                font-size: 14px;
+                pointer-events: none;
+                z-index: 20;
+            }
+
+            /* Hide arrow when tabs fit comfortably */
+            @media (min-width: 500px) {
+                .tab-bar-wrapper::after {
+                    display: none;
+                }
+
+                .tab-bar {
+                    padding-right: 0;
+                }
+            }
+
+            .tab-bar {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                scrollbar-width: thin;
+                padding-right: 30px;
+            }
+
+            .tab-bar .label {
+                flex-shrink: 0;
+            }
+        }
+
+        /* Tab bar layout (all sizes) */
+        .tab-bar {
+            display: flex;
+            align-items: center;
+        }
+
+        /* Override panel display using :has() since siblings are in wrapper */
+        .cs-tabs .panel {
+            display: none;
+        }
+
+        .cs-tabs:has(#tab-store:checked) #panel-store,
+        .cs-tabs:has(#tab-reviews:checked) #panel-reviews,
+        .cs-tabs:has(#tab-news:checked) #panel-news,
+        .cs-tabs:has(#tab-patches:checked) #panel-patches,
+        .cs-tabs:has(#tab-achievements:checked) #panel-achievements {
+            display: block;
         }
     </style>
 </head>
@@ -872,9 +935,21 @@
             <div class="store-content">
                 <!-- Tabs -->
                 <div class="cs-tabs">
-                    <input class="radiotab" name="tabs" tabindex="1" type="radio" id="tab-store" checked>
-                    <label class="label" for="tab-store">Store</label>
-                    <div class="panel">
+                    <div class="tab-bar-wrapper">
+                    <div class="tab-bar">
+                        <input class="radiotab" name="tabs" tabindex="1" type="radio" id="tab-store" checked>
+                        <label class="label" for="tab-store">Store</label>
+                        <input class="radiotab" name="tabs" tabindex="2" type="radio" id="tab-reviews">
+                        <label class="label" for="tab-reviews">Reviews</label>
+                        <input class="radiotab" name="tabs" tabindex="3" type="radio" id="tab-news">
+                        <label class="label" for="tab-news">News</label>
+                        <input class="radiotab" name="tabs" tabindex="4" type="radio" id="tab-patches">
+                        <label class="label" for="tab-patches">Patches</label>
+                        <input class="radiotab" name="tabs" tabindex="5" type="radio" id="tab-achievements">
+                        <label class="label" for="tab-achievements">Achievements</label>
+                    </div>
+                    </div>
+                    <div class="panel" id="panel-store">
                         <!-- About This Game -->
                         <div class="section-box">
                             <div class="section-title">ABOUT THIS GAME</div>
@@ -1120,9 +1195,7 @@
                         </div>
                     </div>
 
-                    <input class="radiotab" name="tabs" tabindex="2" type="radio" id="tab-reviews">
-                    <label class="label" for="tab-reviews">Reviews</label>
-                    <div class="panel">
+                    <div class="panel" id="panel-reviews">
                         <!-- Main Review -->
                         <div class="review" id="main-review">
                             <div class="review-header">
@@ -1365,9 +1438,7 @@
                         </div>
                     </div>
 
-                    <input class="radiotab" name="tabs" tabindex="3" type="radio" id="tab-news">
-                    <label class="label" for="tab-news">News</label>
-                    <div class="panel">
+                    <div class="panel" id="panel-news">
                         <div class="section-box">
                             <div class="section-title">ANNOUNCEMENTS</div>
 
@@ -1474,9 +1545,7 @@
                         </div>
                     </div>
 
-                    <input class="radiotab" name="tabs" tabindex="4" type="radio" id="tab-patches">
-                    <label class="label" for="tab-patches">Patches</label>
-                    <div class="panel">
+                    <div class="panel" id="panel-patches">
                         <div class="section-box">
                             <div class="section-title">UPDATE HISTORY</div>
                             <!--
@@ -1673,9 +1742,7 @@
                         </div>
                     </div>
 
-                    <input class="radiotab" name="tabs" tabindex="5" type="radio" id="tab-achievements">
-                    <label class="label" for="tab-achievements">Achievements</label>
-                    <div class="panel">
+                    <div class="panel" id="panel-achievements">
                         <div class="section-box">
                             <div class="section-title">ACHIEVEMENTS</div>
 
