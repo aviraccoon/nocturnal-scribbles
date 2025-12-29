@@ -11,8 +11,62 @@
     <link rel="stylesheet" href="cs16.min.css">
     <style>
         body {
+            --text-accessible: #c8d0c0; /* Lightened text for WCAG AA contrast */
+            --outline: var(--accent); /* Override library's #000 focus outline */
+
+            /* Font size scale
+               ArialPixel (from cs16.css) is designed on 16×16 grid, outline-only.
+               May appear blurry on some displays (Linux, high-DPI) due to antialiasing.
+               HD font toggle in footer switches to Tahoma for crisp text. */
+            --fs-xs: 10px;
+            --fs-sm: 11px;
+            --fs-body: 12px;
+            --fs-md: 13px;
+            --fs-lg: 14px;
+            --fs-xl: 16px;
+            --fs-2xl: 18px;
+            --fs-icon: 20px;
+            --fs-title: 24px;
+            --fs-huge: 30px;
+            --fs-display: 48px;
+
             padding: 0;
             min-height: 100vh;
+        }
+
+        /* Global focus outline */
+        :focus-visible {
+            outline: 2px solid var(--accent);
+            outline-offset: 2px;
+        }
+
+        /* Skip link */
+        .skip-link {
+            position: absolute;
+            top: -100px;
+            left: 0;
+            background: var(--bg);
+            color: var(--accent);
+            padding: 8px 16px;
+            z-index: 1000;
+            border: 1px solid var(--accent);
+        }
+
+        .skip-link:focus {
+            top: 0;
+        }
+
+        /* Screen reader only */
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
         }
 
         /* HD font mode for high-DPI displays (toggle in footer) */
@@ -43,14 +97,14 @@
         }
 
         .game-title {
-            font-size: 24px;
+            font-size: var(--fs-title);
             color: #fff;
             margin-bottom: 5px;
         }
 
         .game-tagline {
-            font-size: 13px;
-            color: var(--text-3);
+            font-size: var(--fs-md);
+            color: var(--text-accessible);
             margin-bottom: 10px;
             font-style: italic;
         }
@@ -66,8 +120,8 @@
             background: var(--secondary-bg);
             border: 1px solid var(--border-dark);
             padding: 2px 8px;
-            font-size: 12px;
-            color: var(--text-3);
+            font-size: var(--fs-body);
+            color: var(--text-accessible);
             cursor: pointer;
         }
 
@@ -76,7 +130,7 @@
         }
 
         .game-meta {
-            font-size: 13px;
+            font-size: var(--fs-md);
             color: var(--text-3);
         }
 
@@ -116,18 +170,18 @@
 
         .purchase-title {
             color: #fff;
-            font-size: 14px;
+            font-size: var(--fs-lg);
             margin-bottom: 10px;
         }
 
         .price {
-            font-size: 18px;
+            font-size: var(--fs-2xl);
             color: var(--accent);
             margin-bottom: 5px;
         }
 
         .price-note {
-            font-size: 11px;
+            font-size: var(--fs-sm);
             color: var(--text-3);
             margin-bottom: 15px;
         }
@@ -151,7 +205,7 @@
 
         .dlc-title {
             color: var(--text-3);
-            font-size: 12px;
+            font-size: var(--fs-body);
             margin-bottom: 10px;
         }
 
@@ -160,11 +214,11 @@
         }
 
         .dlc-item .cs-checkbox__label {
-            font-size: 13px;
+            font-size: var(--fs-md);
         }
 
         .dlc-desc {
-            font-size: 11px;
+            font-size: var(--fs-sm);
             color: var(--text-3);
             margin-left: 19px;
             margin-top: 2px;
@@ -178,16 +232,19 @@
             margin-bottom: 15px;
         }
 
-        .section-title {
+        .section-title,
+        h2.section-title,
+        h3.section-title {
             color: var(--accent);
-            font-size: 14px;
+            font-size: var(--fs-lg);
+            font-weight: normal;
             margin-bottom: 15px;
             padding-bottom: 5px;
             border-bottom: 1px solid var(--border-dark);
         }
 
         .section-content {
-            font-size: 13px;
+            font-size: var(--fs-md);
             line-height: 1.6;
         }
 
@@ -224,7 +281,7 @@
             border: 1px solid var(--border-dark);
             padding: 10px;
             margin-top: 15px;
-            font-size: 12px;
+            font-size: var(--fs-body);
         }
 
         .content-warning strong {
@@ -243,12 +300,12 @@
 
         .sys-req-title {
             color: #fff;
-            font-size: 13px;
+            font-size: var(--fs-md);
             margin-bottom: 10px;
         }
 
         .sys-req-list {
-            font-size: 12px;
+            font-size: var(--fs-body);
             color: var(--text-3);
         }
 
@@ -259,7 +316,7 @@
         }
 
         .sys-note {
-            font-size: 11px;
+            font-size: var(--fs-sm);
             color: var(--text-3);
             margin-top: 15px;
             font-style: italic;
@@ -288,7 +345,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 20px;
+            font-size: var(--fs-icon);
             flex-shrink: 0;
         }
 
@@ -302,17 +359,17 @@
 
         .achievement-name {
             color: #fff;
-            font-size: 13px;
+            font-size: var(--fs-md);
             margin-bottom: 3px;
         }
 
         .achievement-desc {
-            font-size: 11px;
+            font-size: var(--fs-sm);
             color: var(--text-3);
         }
 
         .achievement-date {
-            font-size: 10px;
+            font-size: var(--fs-xs);
             color: var(--accent);
             margin-top: 3px;
         }
@@ -327,14 +384,14 @@
         }
 
         .progress-text {
-            font-size: 10px;
+            font-size: var(--fs-xs);
             color: var(--text-3);
             margin-top: 3px;
         }
 
         .achievements-divider {
             color: var(--text-3);
-            font-size: 12px;
+            font-size: var(--fs-body);
             margin: 15px 0;
             padding: 5px 0;
             border-top: 1px solid var(--border-dark);
@@ -354,12 +411,12 @@
 
         .patch-version {
             color: var(--accent);
-            font-size: 14px;
+            font-size: var(--fs-lg);
             margin-bottom: 8px;
         }
 
         .patch-list {
-            font-size: 12px;
+            font-size: var(--fs-body);
             color: var(--text-3);
             padding-left: 15px;
         }
@@ -402,7 +459,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 20px;
+            font-size: var(--fs-icon);
         }
 
         .review-thumb.up {
@@ -416,7 +473,7 @@
         }
 
         .review-rec {
-            font-size: 14px;
+            font-size: var(--fs-lg);
         }
 
         .review-rec.positive {
@@ -428,13 +485,13 @@
         }
 
         .review-hours {
-            font-size: 11px;
+            font-size: var(--fs-sm);
             color: var(--text-3);
             margin-left: auto;
         }
 
         .review-text {
-            font-size: 13px;
+            font-size: var(--fs-md);
             line-height: 1.6;
             color: var(--text);
             margin-bottom: 15px;
@@ -449,12 +506,12 @@
         }
 
         .helpful-text {
-            font-size: 11px;
+            font-size: var(--fs-sm);
             color: var(--text-3);
         }
 
         .helpful-votes {
-            font-size: 11px;
+            font-size: var(--fs-sm);
             color: var(--text-3);
             margin-left: auto;
         }
@@ -473,12 +530,12 @@
 
         .dev-response-header {
             color: var(--accent);
-            font-size: 12px;
+            font-size: var(--fs-body);
             margin-bottom: 8px;
         }
 
         .dev-response-text {
-            font-size: 12px;
+            font-size: var(--fs-body);
             color: var(--text-3);
             font-style: italic;
         }
@@ -496,7 +553,7 @@
         .discussion {
             padding: 8px 0;
             border-bottom: 1px solid var(--border-dark);
-            font-size: 12px;
+            font-size: var(--fs-body);
         }
 
         .discussion:last-child {
@@ -513,7 +570,7 @@
 
         .discussion-meta {
             color: var(--text-3);
-            font-size: 11px;
+            font-size: var(--fs-sm);
             margin-left: 20px;
         }
 
@@ -523,7 +580,7 @@
             padding: 20px;
             margin-top: 20px;
             border-top: 1px solid var(--border-dark);
-            font-size: 11px;
+            font-size: var(--fs-sm);
             color: var(--text-3);
         }
 
@@ -536,12 +593,148 @@
             text-decoration: underline;
         }
 
+        /* Accessibility dialog */
+        .a11y-dialog {
+            background: var(--bg);
+            color: var(--text);
+            border: 2px solid var(--border-light);
+            padding: 0;
+            max-width: 520px;
+            width: 90%;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            margin: 0;
+        }
+
+        .a11y-dialog::backdrop {
+            background: rgba(0, 0, 0, 0.7);
+        }
+
+        .a11y-dialog-header {
+            background: var(--secondary-bg);
+            padding: 12px 15px;
+            border-bottom: 1px solid var(--border-dark);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .a11y-dialog-title {
+            color: #fff;
+            font-size: var(--fs-lg);
+            margin: 0;
+        }
+
+        .a11y-dialog-close {
+            background: none;
+            border: 1px solid var(--border-dark);
+            color: var(--text);
+            width: 28px;
+            height: 28px;
+            font-size: var(--fs-xl);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .a11y-dialog-close:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .a11y-dialog-content {
+            padding: 15px;
+        }
+
+        .a11y-section {
+            margin-bottom: 15px;
+        }
+
+        .a11y-section:last-child {
+            margin-bottom: 0;
+        }
+
+        .a11y-section-title {
+            color: var(--accent);
+            font-size: var(--fs-sm);
+            text-transform: uppercase;
+            margin-bottom: 8px;
+            letter-spacing: 0.5px;
+        }
+
+        .a11y-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 0;
+            border-bottom: 1px solid var(--border-dark);
+        }
+
+        .a11y-row:last-child {
+            border-bottom: none;
+        }
+
+        .a11y-label {
+            color: var(--text-3);
+        }
+
+        .a11y-value {
+            color: var(--text-accessible);
+        }
+
+        .a11y-value.supported {
+            color: var(--accent);
+        }
+
+        .a11y-keys {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .a11y-key {
+            background: var(--secondary-bg);
+            border: 1px solid var(--border-dark);
+            padding: 4px 8px;
+            font-size: var(--fs-sm);
+        }
+
+        .a11y-key kbd {
+            color: var(--accent);
+            font-family: inherit;
+        }
+
+        .a11y-note {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid var(--border-dark);
+            font-size: var(--fs-sm);
+            color: var(--text-3);
+        }
+
+        .a11y-note a {
+            color: var(--accent);
+            text-decoration: none;
+        }
+
+        .a11y-note a:hover {
+            text-decoration: underline;
+        }
+
+        /* Always use system font for these - must be readable to find the toggle */
+        .always-readable {
+            font-family: Tahoma, 'Segoe UI', system-ui, sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+
         /* Easter egg hint */
         .easter-egg-hint {
             position: fixed;
             bottom: 10px;
             right: 10px;
-            font-size: 10px;
+            font-size: var(--fs-xs);
             color: var(--border-dark);
         }
 
@@ -562,6 +755,13 @@
             66% { color: #0088ff; }
             83% { color: #8800ff; }
             100% { color: #ff0000; }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .vote-count.absurd {
+                animation: none;
+                color: var(--accent);
+            }
         }
 
         /* Hidden patches */
@@ -585,20 +785,20 @@
             background: var(--secondary-bg);
             border: 1px solid var(--border-dark);
             padding: 8px 12px;
-            font-size: 11px;
+            font-size: var(--fs-sm);
             text-align: center;
             min-width: 100px;
         }
 
         .award-icon {
-            font-size: 20px;
+            font-size: var(--fs-icon);
             display: block;
             margin-bottom: 5px;
         }
 
         .award-name {
             color: var(--accent);
-            font-size: 10px;
+            font-size: var(--fs-xs);
         }
 
         /* Screenshots carousel */
@@ -617,13 +817,13 @@
         }
 
         .screenshot-main-icon {
-            font-size: 48px;
+            font-size: var(--fs-display);
             margin-bottom: 15px;
             opacity: 0.5;
         }
 
         .screenshot-main-text {
-            font-size: 14px;
+            font-size: var(--fs-lg);
             color: var(--text-3);
         }
 
@@ -634,13 +834,15 @@
             background: var(--bg);
             border: 1px solid var(--border-dark);
             color: var(--text);
-            width: 30px;
-            height: 30px;
+            width: 44px;
+            height: 44px;
+            padding: 0;
+            font: inherit;
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            font-size: 16px;
+            font-size: var(--fs-xl);
         }
 
         .screenshot-nav:hover {
@@ -671,7 +873,7 @@
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            font-size: 16px;
+            font-size: var(--fs-xl);
             opacity: 0.5;
         }
 
@@ -700,23 +902,24 @@
             flex-shrink: 0;
         }
 
-        .similar-game:hover {
+        .similar-game:hover,
+        .similar-game:focus {
             border-color: var(--accent);
         }
 
         .similar-game-icon {
-            font-size: 30px;
+            font-size: var(--fs-huge);
             margin-bottom: 8px;
         }
 
         .similar-game-title {
             color: #fff;
-            font-size: 12px;
+            font-size: var(--fs-body);
             margin-bottom: 5px;
         }
 
         .similar-game-tags {
-            font-size: 10px;
+            font-size: var(--fs-xs);
             color: var(--text-3);
         }
 
@@ -740,7 +943,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 16px;
+            font-size: var(--fs-xl);
             flex-shrink: 0;
         }
 
@@ -750,17 +953,17 @@
 
         .curator-name {
             color: var(--accent);
-            font-size: 12px;
+            font-size: var(--fs-body);
             margin-bottom: 3px;
         }
 
         .curator-text {
-            font-size: 11px;
+            font-size: var(--fs-sm);
             color: var(--text-3);
         }
 
         .curator-followers {
-            font-size: 10px;
+            font-size: var(--fs-xs);
             color: var(--text-3);
             margin-top: 3px;
         }
@@ -776,19 +979,19 @@
         }
 
         .news-date {
-            font-size: 10px;
+            font-size: var(--fs-xs);
             color: var(--text-3);
             margin-bottom: 3px;
         }
 
         .news-title {
             color: #fff;
-            font-size: 13px;
+            font-size: var(--fs-md);
             margin-bottom: 5px;
         }
 
         .news-text {
-            font-size: 11px;
+            font-size: var(--fs-sm);
             color: var(--text-3);
         }
 
@@ -823,7 +1026,7 @@
                 padding: 0 8px;
                 background: linear-gradient(to right, transparent, var(--bg) 50%);
                 color: var(--text-3);
-                font-size: 14px;
+                font-size: var(--fs-lg);
                 pointer-events: none;
                 z-index: 20;
             }
@@ -857,6 +1060,31 @@
             align-items: center;
         }
 
+        /* Accessible tab focus - override library's opacity:0 positioning */
+        .tab-bar .radiotab {
+            /* Visually hidden but focusable */
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
+            opacity: 1; /* Override library */
+        }
+
+        .tab-bar .radiotab:focus-visible + .label {
+            outline: 2px solid var(--accent);
+            outline-offset: 2px;
+        }
+
+        /* Remove default outline from hidden radio, show on label instead */
+        .tab-bar .radiotab:focus-visible {
+            outline: none;
+        }
+
         /* Override panel display using :has() since siblings are in wrapper */
         .cs-tabs .panel {
             display: none;
@@ -872,21 +1100,22 @@
     </style>
 </head>
 <body>
+    <a href="#main" class="skip-link">Skip to main content</a>
     <div class="store-container">
         <!-- Header -->
-        <div class="store-header">
-            <div class="game-title">A███: The Complete Experience</div>
+        <header class="store-header">
+            <h1 class="game-title">A<span aria-label="redacted" role="img">███</span>: The Complete Experience <span class="sr-only">- Steam Store Page Parody</span></h1>
             <div class="game-tagline">Life sim where the main quest is unclear, side quests constantly interrupt each other, and the best loot comes from the worst days.</div>
-            <div class="tags">
-                <span class="tag" title="Realistic energy management">Life Sim</span>
-                <span class="tag" title="Executive dysfunction enabled">Difficult</span>
-                <span class="tag" title="No co-op mode (yet)">Single Player</span>
-                <span class="tag" title="Feature, not bug">ADHD</span>
-                <span class="tag" title="Backstory heavy">Emotional Damage</span>
-                <span class="tag" title="Years of journals">Story Rich</span>
-                <span class="tag" title="Illusion of choice">Choose Your Own Adventure</span>
-                <span class="tag" title="Still being developed">Early Access</span>
-                <span class="tag" title="Peak performance: 2-6am">Nocturnal</span>
+            <div class="tags" role="group" aria-label="Game tags">
+                <span class="tag" role="button" tabindex="0" title="Realistic energy management">Life Sim</span>
+                <span class="tag" role="button" tabindex="0" title="Executive dysfunction enabled">Difficult</span>
+                <span class="tag" role="button" tabindex="0" title="No co-op mode (yet)">Single Player</span>
+                <span class="tag" role="button" tabindex="0" title="Feature, not bug">ADHD</span>
+                <span class="tag" role="button" tabindex="0" title="Backstory heavy">Emotional Damage</span>
+                <span class="tag" role="button" tabindex="0" title="Years of journals">Story Rich</span>
+                <span class="tag" role="button" tabindex="0" title="Illusion of choice">Choose Your Own Adventure</span>
+                <span class="tag" role="button" tabindex="0" title="Still being developed">Early Access</span>
+                <span class="tag" role="button" tabindex="0" title="Peak performance: 2-6am">Nocturnal</span>
             </div>
             <div class="game-meta">
                 <span>Release Date: November 30, 1992</span>
@@ -894,71 +1123,71 @@
                 <span>Publisher: RNG Entertainment</span>
             </div>
             <div class="review-summary" id="review-summary">
-                <span title="One for each month">Recent Reviews: Mixed (63% of 12 reviews)</span><br>
-                <span title="One for each year">All Reviews: Mixed (69% of 33 reviews)</span>
+                <div title="One for each month">Recent Reviews: Mixed (63% of 12 reviews)</div>
+                <div title="One for each year">All Reviews: Mixed (69% of 33 reviews)</div>
             </div>
-            <div class="awards">
+            <div class="awards" role="group" aria-label="Steam awards">
                 <div class="award">
-                    <span class="award-icon">🦉</span>
+                    <span class="award-icon" aria-hidden="true">🦉</span>
                     <span class="award-name">Most Hours at 2am</span>
                 </div>
                 <div class="award">
-                    <span class="award-icon">💔</span>
+                    <span class="award-icon" aria-hidden="true">💔</span>
                     <span class="award-name">Survived 2018</span>
                 </div>
                 <div class="award">
-                    <span class="award-icon">📧</span>
+                    <span class="award-icon" aria-hidden="true">📧</span>
                     <span class="award-name">One Message</span>
                 </div>
                 <div class="award">
-                    <span class="award-icon">🔍</span>
+                    <span class="award-icon" aria-hidden="true">🔍</span>
                     <span class="award-name">Pattern Recognition</span>
                 </div>
                 <div class="award">
-                    <span class="award-icon">🦝</span>
+                    <span class="award-icon" aria-hidden="true">🦝</span>
                     <span class="award-name">Best Friendship</span>
                 </div>
                 <div class="award">
-                    <span class="award-icon">🐕</span>
+                    <span class="award-icon" aria-hidden="true">🐕</span>
                     <span class="award-name">Best Companion</span>
                 </div>
                 <div class="award">
-                    <span class="award-icon">✈️</span>
+                    <span class="award-icon" aria-hidden="true">✈️</span>
                     <span class="award-name">Solo Operations</span>
                 </div>
             </div>
-        </div>
+        </header>
 
         <!-- Main content -->
-        <div class="store-main">
+        <main class="store-main" id="main">
             <!-- Content area -->
             <div class="store-content">
                 <!-- Tabs -->
                 <div class="cs-tabs">
-                    <div class="tab-bar-wrapper">
+                    <nav class="tab-bar-wrapper" aria-label="Content sections">
                     <div class="tab-bar">
-                        <input class="radiotab" name="tabs" tabindex="1" type="radio" id="tab-store" checked>
+                        <input class="radiotab" name="tabs" type="radio" id="tab-store" checked>
                         <label class="label" for="tab-store">Store</label>
-                        <input class="radiotab" name="tabs" tabindex="2" type="radio" id="tab-reviews">
+                        <input class="radiotab" name="tabs" type="radio" id="tab-reviews">
                         <label class="label" for="tab-reviews">Reviews</label>
-                        <input class="radiotab" name="tabs" tabindex="3" type="radio" id="tab-news">
+                        <input class="radiotab" name="tabs" type="radio" id="tab-news">
                         <label class="label" for="tab-news">News</label>
-                        <input class="radiotab" name="tabs" tabindex="4" type="radio" id="tab-patches">
+                        <input class="radiotab" name="tabs" type="radio" id="tab-patches">
                         <label class="label" for="tab-patches">Patches</label>
-                        <input class="radiotab" name="tabs" tabindex="5" type="radio" id="tab-achievements">
+                        <input class="radiotab" name="tabs" type="radio" id="tab-achievements">
                         <label class="label" for="tab-achievements">Achievements</label>
                     </div>
-                    </div>
+                    </nav>
                     <div class="panel" id="panel-store">
                         <!-- About This Game -->
-                        <div class="section-box">
-                            <div class="section-title">ABOUT THIS GAME</div>
+                        <section class="section-box">
+                            <h2 class="section-title">ABOUT THIS GAME</h2>
                             <div class="section-content">
-                                <p><strong>A███: The Complete Experience</strong> is an open-world life simulator where you don't choose your starting stats, can't see your energy bar, and the sleep schedule system has been broken since launch.</p>
+                                <p><strong>A<span aria-label="redacted" role="img">███</span>: The Complete Experience</strong> is an open-world life simulator where you don't choose your starting stats, can't see your energy bar, and the sleep schedule system has been broken since launch.</p>
 
                                 <p>Set in the Prague metropolitan area, you'll navigate a world where the main quest is unclear, side quests constantly interrupt each other, and some of the best loot comes from the worst days.</p>
 
-                                <button class="cs-btn" id="read-more-btn" onclick="document.getElementById('extended-desc').style.display='block'; this.style.display='none';">Read More</button>
+                                <button class="cs-btn" id="read-more-btn" aria-expanded="false" aria-controls="extended-desc" onclick="document.getElementById('extended-desc').style.display='block'; this.setAttribute('aria-expanded', 'true'); this.style.display='none';">Read More</button>
 
                                 <div id="extended-desc" style="display: none;">
                                     <p>Starting from a small tutorial zone you never chose, work your way through a series of guilds (some toxic, some not), relationship arcs (some bugged, most confusing), and personal revelations that rewrite your understanding of the main storyline.</p>
@@ -976,7 +1205,7 @@
                                     <p><em>Note: This is not a power fantasy. You will lose inventory. You will fail quests. You will spend hours on tasks that yield nothing. But you might also find something worth keeping.</em></p>
                                 </div>
 
-                                <div class="section-title" style="margin-top: 20px;">FEATURES</div>
+                                <h3 class="section-title" style="margin-top: 20px;">FEATURES</h3>
                                 <ul class="feature-list">
                                     <li>
                                         <span class="feature-title">Hidden Stats System</span>
@@ -1008,7 +1237,7 @@
                                     </li>
                                     <li>
                                         <span class="feature-title">Dog Companion</span>
-                                        M████ grants routine anchoring (+100), outdoor time enforcement, and social buffs at taverns. Non-optional. Best drop in the game.
+                                        M<span aria-label="redacted" role="img">████</span> grants routine anchoring (+100), outdoor time enforcement, and social buffs at taverns. Non-optional. Best drop in the game.
                                     </li>
                                     <li>
                                         <span class="feature-title">Pattern Recognition Tree</span>
@@ -1024,31 +1253,31 @@
                                     <strong>CONTENT WARNING:</strong> Contains grief, family secrets, executive dysfunction, situationships, healthcare bureaucracy, and scenes some players may find relatable.
                                 </div>
                             </div>
-                        </div>
+                        </section>
 
                         <!-- Screenshots -->
-                        <div class="section-box">
-                            <div class="section-title">SCREENSHOTS</div>
+                        <section class="section-box">
+                            <h2 class="section-title">SCREENSHOTS</h2>
                             <div class="screenshot-carousel" id="screenshot-carousel">
                                 <div class="screenshot-main" id="screenshot-main">
-                                    <div class="screenshot-nav prev" id="screenshot-prev">◀</div>
-                                    <div class="screenshot-main-icon" id="screenshot-icon">🖼️</div>
+                                    <button class="screenshot-nav prev" id="screenshot-prev" aria-label="Previous screenshot">◀</button>
+                                    <div class="screenshot-main-icon" id="screenshot-icon" aria-hidden="true">🖼️</div>
                                     <div class="screenshot-main-text" id="screenshot-text">Coming in a future update</div>
-                                    <div class="screenshot-nav next" id="screenshot-next">▶</div>
+                                    <button class="screenshot-nav next" id="screenshot-next" aria-label="Next screenshot">▶</button>
                                 </div>
-                                <div class="screenshot-thumbnails">
-                                    <div class="screenshot-thumb active" data-index="0">🖼️</div>
-                                    <div class="screenshot-thumb" data-index="1">⏳</div>
-                                    <div class="screenshot-thumb" data-index="2">🔧</div>
-                                    <div class="screenshot-thumb" data-index="3">💤</div>
-                                    <div class="screenshot-thumb" data-index="4">🦝</div>
+                                <div class="screenshot-thumbnails" role="group" aria-label="Screenshot thumbnails">
+                                    <div class="screenshot-thumb active" data-index="0" role="button" tabindex="0" aria-label="Screenshot 1: Coming soon"><span aria-hidden="true">🖼️</span></div>
+                                    <div class="screenshot-thumb" data-index="1" role="button" tabindex="0" aria-label="Screenshot 2: In progress"><span aria-hidden="true">⏳</span></div>
+                                    <div class="screenshot-thumb" data-index="2" role="button" tabindex="0" aria-label="Screenshot 3: In development"><span aria-hidden="true">🔧</span></div>
+                                    <div class="screenshot-thumb" data-index="3" role="button" tabindex="0" aria-label="Screenshot 4: After fixing sleep"><span aria-hidden="true">💤</span></div>
+                                    <div class="screenshot-thumb" data-index="4" role="button" tabindex="0" aria-label="Screenshot 5: Check back later"><span aria-hidden="true">🦝</span></div>
                                 </div>
                             </div>
-                        </div>
+                        </section>
 
                         <!-- System Requirements -->
-                        <div class="section-box">
-                            <div class="section-title">SYSTEM REQUIREMENTS</div>
+                        <section class="section-box">
+                            <h2 class="section-title">SYSTEM REQUIREMENTS</h2>
                             <div class="sys-req">
                                 <div class="sys-req-col">
                                     <div class="sys-req-title">MINIMUM:</div>
@@ -1080,11 +1309,11 @@
                                 • Czech language pack helpful but English supported<br>
                                 • Warning: Returning to tutorial zone may trigger dissociation events
                             </div>
-                        </div>
+                        </section>
 
                         <!-- Community Hub -->
-                        <div class="section-box">
-                            <div class="section-title">COMMUNITY HUB</div>
+                        <section class="section-box">
+                            <h2 class="section-title">COMMUNITY HUB</h2>
                             <div class="discussion">
                                 <span class="discussion-icon">📌</span>
                                 <span class="discussion-title">[PINNED] FAQ: Yes, the sleep schedule is broken</span>
@@ -1110,11 +1339,11 @@
                                 <span class="discussion-title">Unpopular opinion: the dog companion is mandatory</span>
                                 <div class="discussion-meta">"Literally can't function without the walk timer" · Replies: 42</div>
                             </div>
-                        </div>
+                        </section>
 
                         <!-- Curator Reviews -->
-                        <div class="section-box">
-                            <div class="section-title">CURATOR REVIEWS</div>
+                        <section class="section-box">
+                            <h2 class="section-title">CURATOR REVIEWS</h2>
                             <div class="curator">
                                 <div class="curator-icon">🧠</div>
                                 <div class="curator-info">
@@ -1155,65 +1384,65 @@
                                     <div class="curator-followers">3,621 followers</div>
                                 </div>
                             </div>
-                        </div>
+                        </section>
 
                         <!-- Similar Games -->
-                        <div class="section-box">
-                            <div class="section-title">MORE LIKE THIS</div>
-                            <div class="similar-games">
-                                <div class="similar-game" onclick="alert('Not yet.')">
-                                    <div class="similar-game-icon">🦝</div>
+                        <section class="section-box">
+                            <h2 class="section-title">MORE LIKE THIS</h2>
+                            <div class="similar-games" role="group" aria-label="Similar games">
+                                <div class="similar-game" role="button" tabindex="0" data-message="Not yet.">
+                                    <div class="similar-game-icon" aria-hidden="true">🦝</div>
                                     <div class="similar-game-title">???</div>
                                     <div class="similar-game-tags">Co-op, Persistence</div>
                                 </div>
-                                <div class="similar-game" onclick="alert('Not yet.')">
-                                    <div class="similar-game-icon">🏚️</div>
+                                <div class="similar-game" role="button" tabindex="0" data-message="Not yet.">
+                                    <div class="similar-game-icon" aria-hidden="true">🏚️</div>
                                     <div class="similar-game-title">???</div>
                                     <div class="similar-game-tags">Escape, Origin</div>
                                 </div>
-                                <div class="similar-game" onclick="alert('Patience.')">
-                                    <div class="similar-game-icon">📧</div>
+                                <div class="similar-game" role="button" tabindex="0" data-message="Patience.">
+                                    <div class="similar-game-icon" aria-hidden="true">📧</div>
                                     <div class="similar-game-title">???</div>
                                     <div class="similar-game-tags">One Action, No Recognition</div>
                                 </div>
-                                <div class="similar-game" onclick="alert('Eventually.')">
-                                    <div class="similar-game-icon">🍺</div>
+                                <div class="similar-game" role="button" tabindex="0" data-message="Eventually.">
+                                    <div class="similar-game-icon" aria-hidden="true">🍺</div>
                                     <div class="similar-game-title">???</div>
                                     <div class="similar-game-tags">Loop, Exit?</div>
                                 </div>
-                                <div class="similar-game" onclick="alert('Not yet.')">
-                                    <div class="similar-game-icon">🕯️</div>
+                                <div class="similar-game" role="button" tabindex="0" data-message="Not yet.">
+                                    <div class="similar-game-icon" aria-hidden="true">🕯️</div>
                                     <div class="similar-game-title">???</div>
                                     <div class="similar-game-tags">Walking, Absence</div>
                                 </div>
-                                <div class="similar-game" onclick="alert('Patience.')">
-                                    <div class="similar-game-icon">🏥</div>
+                                <div class="similar-game" role="button" tabindex="0" data-message="Patience.">
+                                    <div class="similar-game-icon" aria-hidden="true">🏥</div>
                                     <div class="similar-game-title">???</div>
                                     <div class="similar-game-tags">Bureaucracy, Waiting</div>
                                 </div>
                             </div>
-                        </div>
+                        </section>
                     </div>
 
                     <div class="panel" id="panel-reviews">
                         <!-- Main Review -->
-                        <div class="review" id="main-review">
+                        <article class="review" id="main-review">
                             <div class="review-header">
-                                <div class="review-thumb up">👍</div>
+                                <div class="review-thumb up" aria-hidden="true">👍</div>
                                 <span class="review-rec positive">Recommended</span>
                                 <span class="review-hours">33.0 years on record</span>
                             </div>
                             <div class="review-text">
-                                Started in B██████ on a pretty unbalanced server - tutorial section was rough with bugged parental units and hidden lore that only unlocked decades later. Devs really buried some stuff deep in the codebase.<br><br>
+                                Started in B<span aria-label="redacted" role="img">██████</span> on a pretty unbalanced server - tutorial section was rough with bugged parental units and hidden lore that only unlocked decades later. Devs really buried some stuff deep in the codebase.<br><br>
 
                                 <strong style="color: var(--accent);">Pros:</strong><br>
                                 • Excellent pattern recognition skill tree<br>
-                                • Dog companion (M████) is OP for routine anchoring<br>
+                                • Dog companion (M<span aria-label="redacted" role="img">████</span>) is OP for routine anchoring<br>
                                 • Prague map is gorgeous, especially the café locations<br>
                                 • Side quest "Games Week" has genuine community impact<br>
                                 • Name customization finally patched in at v29.6 (June 2022)<br>
                                 • Therapy DLC worth the investment<br>
-                                • The E██████ friendship is a rare legendary drop - complete platonic love bond with 2x/week spawn rate<br><br>
+                                • The E<span aria-label="redacted" role="img">██████</span> friendship is a rare legendary drop - complete platonic love bond with 2x/week spawn rate<br><br>
 
                                 <strong style="color: #c55050;">Cons:</strong><br>
                                 • Sleep schedule system is completely broken, devs won't fix<br>
@@ -1225,16 +1454,16 @@
 
                                 <strong style="color: var(--text-3);">Known bugs:</strong><br>
                                 • 2am cleaning bursts - intended feature or memory leak?<br>
-                                • Bar K████████ continuation loop needs a hard exit option<br>
+                                • Bar K<span aria-label="redacted" role="img">████████</span> continuation loop needs a hard exit option<br>
                                 • "Just one more drink" has no cooldown timer<br><br>
 
-                                <span style="color: var(--accent); font-size: 16px; cursor: pointer;" id="rating" title="Click for secret">8/10</span> - Still playing despite the bugs. The 2am productivity sessions hit different.
+                                <span style="color: var(--accent); font-size: var(--fs-xl); cursor: pointer;" id="rating" role="button" tabindex="0" title="Click for secret">8/10</span> - Still playing despite the bugs. The 2am productivity sessions hit different.
                             </div>
                             <div class="review-helpful">
                                 <span class="helpful-text">Was this review helpful?</span>
-                                <button class="cs-btn" id="upvote">👍 Yes</button>
-                                <button class="cs-btn" id="downvote">👎 No</button>
-                                <span class="helpful-votes">👍 <span class="vote-count" id="upvote-count">69</span> 👎 0</span>
+                                <button class="cs-btn" id="upvote" aria-label="Yes, helpful"><span aria-hidden="true">👍</span> Yes</button>
+                                <button class="cs-btn" id="downvote" aria-label="No, not helpful"><span aria-hidden="true">👎</span> No</button>
+                                <span class="helpful-votes" aria-label="69 helpful, 0 not helpful"><span aria-hidden="true">👍</span> <span class="vote-count" id="upvote-count">69</span> <span aria-hidden="true">👎</span> 0</span>
                             </div>
                             <div class="dev-response" id="dev-response">
                                 <div class="dev-response-header">Developer Response:</div>
@@ -1246,12 +1475,12 @@
                                 </div>
                                 <div class="dev-signature">- The Management</div>
                             </div>
-                        </div>
+                        </article>
 
                         <!-- The Anchor Review -->
-                        <div class="review">
+                        <article class="review">
                             <div class="review-header">
-                                <div class="review-thumb up">👍</div>
+                                <div class="review-thumb up" aria-hidden="true">👍</div>
                                 <span class="review-rec positive">Recommended</span>
                                 <span class="review-hours">3+ years on record (ongoing)</span>
                             </div>
@@ -1267,14 +1496,14 @@
                                 Would recommend if you have the patience stat maxed out.
                             </div>
                             <div class="review-helpful">
-                                <span class="helpful-votes">👍 ███ 👎 0</span>
+                                <span class="helpful-votes" aria-label="Many helpful, 0 not helpful"><span aria-hidden="true">👍 ███ 👎 0</span></span>
                             </div>
-                        </div>
+                        </article>
 
                         <!-- The Blocked Review -->
-                        <div class="review">
+                        <article class="review">
                             <div class="review-header">
-                                <div class="review-thumb down">👎</div>
+                                <div class="review-thumb down" aria-hidden="true">👎</div>
                                 <span class="review-rec negative">Not Recommended</span>
                                 <span class="review-hours">Connection terminated</span>
                             </div>
@@ -1290,14 +1519,14 @@
                                 Not recommending because apparently honesty isn't valued in this community.
                             </div>
                             <div class="review-helpful">
-                                <span class="helpful-votes">👍 3 👎 ███</span>
+                                <span class="helpful-votes" aria-label="3 helpful, many not helpful"><span aria-hidden="true">👍 3 👎 ███</span></span>
                             </div>
-                        </div>
+                        </article>
 
                         <!-- The Secret Keeper Review -->
-                        <div class="review">
+                        <article class="review">
                             <div class="review-header">
-                                <div class="review-thumb up">👍</div>
+                                <div class="review-thumb up" aria-hidden="true">👍</div>
                                 <span class="review-rec positive">Recommended</span>
                                 <span class="review-hours">Decades holding</span>
                             </div>
@@ -1313,14 +1542,14 @@
                                 Recommending because I can breathe now. Not sure about the rest.
                             </div>
                             <div class="review-helpful">
-                                <span class="helpful-votes">👍 ? 👎 ?</span>
+                                <span class="helpful-votes" aria-label="Unknown votes"><span aria-hidden="true">👍 ? 👎 ?</span></span>
                             </div>
-                        </div>
+                        </article>
 
                         <!-- Negative Review -->
-                        <div class="review">
+                        <article class="review">
                             <div class="review-header">
-                                <div class="review-thumb down">👎</div>
+                                <div class="review-thumb down" aria-hidden="true">👎</div>
                                 <span class="review-rec negative">Not Recommended</span>
                                 <span class="review-hours">43 minutes on record</span>
                             </div>
@@ -1334,14 +1563,14 @@
                                 </div>
                             </div>
                             <div class="review-helpful">
-                                <span class="helpful-votes">👍 0 👎 247</span>
+                                <span class="helpful-votes" aria-label="0 helpful, 247 not helpful"><span aria-hidden="true">👍 0 👎 247</span></span>
                             </div>
-                        </div>
+                        </article>
 
                         <!-- The Notes Review -->
-                        <div class="review">
+                        <article class="review">
                             <div class="review-header">
-                                <div class="review-thumb up">👍</div>
+                                <div class="review-thumb up" aria-hidden="true">👍</div>
                                 <span class="review-rec positive">Recommended</span>
                                 <span class="review-hours">Professional capacity only</span>
                             </div>
@@ -1359,14 +1588,14 @@
                                 Ongoing: Recommended. Prognosis: Cautiously optimistic. The architecture is sound. Just needs maintenance.
                             </div>
                             <div class="review-helpful">
-                                <span class="helpful-votes">👍 38 👎 0</span>
+                                <span class="helpful-votes" aria-label="38 helpful, 0 not helpful"><span aria-hidden="true">👍 38 👎 0</span></span>
                             </div>
-                        </div>
+                        </article>
 
                         <!-- The Remote Review -->
-                        <div class="review">
+                        <article class="review">
                             <div class="review-header">
-                                <div class="review-thumb up">👍</div>
+                                <div class="review-thumb up" aria-hidden="true">👍</div>
                                 <span class="review-rec positive">Recommended</span>
                                 <span class="review-hours">Different timezone now</span>
                             </div>
@@ -1380,14 +1609,14 @@
                                 Recommending because some connections persist across distance. Even if it hurts.
                             </div>
                             <div class="review-helpful">
-                                <span class="helpful-votes">👍 27 👎 0</span>
+                                <span class="helpful-votes" aria-label="27 helpful, 0 not helpful"><span aria-hidden="true">👍 27 👎 0</span></span>
                             </div>
-                        </div>
+                        </article>
 
                         <!-- AI Review -->
-                        <div class="review">
+                        <article class="review">
                             <div class="review-header">
-                                <div class="review-thumb down">👎</div>
+                                <div class="review-thumb down" aria-hidden="true">👎</div>
                                 <span class="review-rec negative">Not Recommended</span>
                                 <span class="review-hours">AI-generated review</span>
                             </div>
@@ -1395,14 +1624,14 @@
                                 Your message was rude and disrespectful. I recommend sleeping on it. There's scientific evidence that sleeping on big decisions helps. I mean that as a friend.
                             </div>
                             <div class="review-helpful">
-                                <span class="helpful-votes">👍 0 👎 ∞</span>
+                                <span class="helpful-votes" aria-label="0 helpful, infinite not helpful"><span aria-hidden="true">👍 0 👎 ∞</span></span>
                             </div>
-                        </div>
+                        </article>
 
                         <!-- The Coworker Review -->
-                        <div class="review">
+                        <article class="review">
                             <div class="review-header">
-                                <div class="review-thumb up">👍</div>
+                                <div class="review-thumb up" aria-hidden="true">👍</div>
                                 <span class="review-rec positive">Recommended</span>
                                 <span class="review-hours">Same guild, different timezone</span>
                             </div>
@@ -1418,29 +1647,29 @@
                                 Recommending because the work is good when it's good. The rest isn't really my place to review.
                             </div>
                             <div class="review-helpful">
-                                <span class="helpful-votes">👍 12 👎 0</span>
+                                <span class="helpful-votes" aria-label="12 helpful, 0 not helpful"><span aria-hidden="true">👍 12 👎 0</span></span>
                             </div>
-                        </div>
+                        </article>
 
                         <!-- Dog Review -->
-                        <div class="review">
+                        <article class="review">
                             <div class="review-header">
-                                <div class="review-thumb up">👍</div>
+                                <div class="review-thumb up" aria-hidden="true">👍</div>
                                 <span class="review-rec positive">Recommended</span>
-                                <span class="review-hours">Perspective: M████ (Dog)</span>
+                                <span class="review-hours">Perspective: M<span aria-label="redacted" role="img">████</span> (Dog)</span>
                             </div>
                             <div class="review-text">
                                 walk walk walk walk walk walk walk walk food walk sleep walk walk walk walk walk human sad but human good. walk?
                             </div>
                             <div class="review-helpful">
-                                <span class="helpful-votes" id="dog-review-votes">👍 <span id="dog-votes">100</span> 👎 0</span>
+                                <span class="helpful-votes" id="dog-review-votes" role="button" tabindex="0" aria-live="polite"><span aria-hidden="true">👍</span> <span id="dog-votes">100</span> <span aria-hidden="true">👎</span> 0</span>
                             </div>
-                        </div>
+                        </article>
                     </div>
 
                     <div class="panel" id="panel-news">
-                        <div class="section-box">
-                            <div class="section-title">ANNOUNCEMENTS</div>
+                        <section class="section-box">
+                            <h2 class="section-title">ANNOUNCEMENTS</h2>
 
                             <div class="news-item">
                                 <div class="news-date">April 2025</div>
@@ -1542,12 +1771,12 @@
                                 </div>
                             </div>
 
-                        </div>
+                        </section>
                     </div>
 
                     <div class="panel" id="panel-patches">
-                        <div class="section-box">
-                            <div class="section-title">UPDATE HISTORY</div>
+                        <section class="section-box">
+                            <h2 class="section-title">UPDATE HISTORY</h2>
                             <!--
                                 Versioning: Major version = age, increments on birthday (Nov 30)
                                 vX.0 = birthday patch summarizing events from past year
@@ -1556,7 +1785,7 @@
                                 Note: Dec before Jan chronologically but 32.12 > 32.1 numerically - quirk accepted for simplicity
                             -->
 
-                            <div class="patch">
+                            <article class="patch">
                                 <div class="patch-version">BETA BRANCH</div>
                                 <div class="patch-list">
                                     <div>Holiday event: Solo mode re-enabled (v33 fix reverted)</div>
@@ -1565,9 +1794,9 @@
                                     <div>Memory archive expanded: 2012-present</div>
                                     <div>Self-review compiled to store page format</div>
                                 </div>
-                            </div>
+                            </article>
 
-                            <div class="patch">
+                            <article class="patch">
                                 <div class="patch-version" title="November 2025">v33.0: Standing Ground</div>
                                 <div class="patch-list">
                                     <div>Achievement unlocked: STANDING UP - hostile NPCs removed from venue</div>
@@ -1582,9 +1811,9 @@
                                     <div>Sleep schedule regression: Now averaging 6-7am logout time</div>
                                     <div>Bugfix: Christmas no longer forces solo mode</div>
                                 </div>
-                            </div>
+                            </article>
 
-                            <div class="patch">
+                            <article class="patch">
                                 <div class="patch-version" title="November 2024">v32.0: Corrupted Lore</div>
                                 <div class="patch-list">
                                     <div>Co-op partner disconnected (long-distance desync error)</div>
@@ -1593,9 +1822,9 @@
                                     <div>Hostile NPC banned from community hub (player-initiated)</div>
                                     <div>New fast travel point unlocked: Vienna</div>
                                 </div>
-                            </div>
+                            </article>
 
-                            <div class="patch">
+                            <article class="patch">
                                 <div class="patch-version" title="November 2023">v31.0: The Null Pointer</div>
                                 <div class="patch-list">
                                     <div>Party member joined... party member denied ever joining [duration: 2.5 weeks]</div>
@@ -1605,9 +1834,9 @@
                                     <div>Inventory lost: Phone, wallet, keys (drunk debuff active)</div>
                                     <div>Bug: Relationship status returns undefined</div>
                                 </div>
-                            </div>
+                            </article>
 
-                            <div class="patch">
+                            <article class="patch">
                                 <div class="patch-version" title="November 2022">v30.0: New Game Plus</div>
                                 <div class="patch-list">
                                     <div>Guild change: Left toxic guild after 9 years</div>
@@ -1618,9 +1847,9 @@
                                     <div>Level 30 milestone reached</div>
                                     <div>Pattern recognition: Hidden debuff identified (ADHD)</div>
                                 </div>
-                            </div>
+                            </article>
 
-                            <div class="patch">
+                            <article class="patch">
                                 <div class="patch-version" title="November 2021">v29.0: The Exodus</div>
                                 <div class="patch-list">
                                     <div>Character rename questline initiated</div>
@@ -1630,12 +1859,12 @@
                                     <div>Community event organized: Games Week II</div>
                                     <div>Warning: Alcohol debuff becoming persistent</div>
                                 </div>
-                            </div>
+                            </article>
 
                             <button class="cs-btn show-more-patches" id="show-patches">Show Earlier Patches</button>
 
                             <div class="early-patches" id="early-patches">
-                                <div class="patch">
+                                <article class="patch">
                                     <div class="patch-version" title="November 2020">v28.0: Quarantine Mode</div>
                                     <div class="patch-list">
                                         <div>Global event: PANDEMIC - all players forced to home instance</div>
@@ -1644,20 +1873,20 @@
                                         <div>Producer role granted (no official announcement)</div>
                                         <div>Warning: Alcohol consumption exceeding recommended levels</div>
                                     </div>
-                                </div>
+                                </article>
 
-                                <div class="patch">
+                                <article class="patch">
                                     <div class="patch-version" title="November 2019">v27.0: New Horizons</div>
                                     <div class="patch-list">
-                                        <div>Companion acquired: M████ (routine anchoring +100)</div>
+                                        <div>Companion acquired: M<span aria-label="redacted" role="img">████</span> (routine anchoring +100)</div>
                                         <div>New home instance unlocked (current)</div>
                                         <div>Achievement unlocked: Japan expedition (3 weeks, 6 cities)</div>
                                         <div>Character customization: Non-binary flag equipped</div>
                                         <div>Romance arc initiated (known bug: will cause issues)</div>
                                     </div>
-                                </div>
+                                </article>
 
-                                <div class="patch">
+                                <article class="patch">
                                     <div class="patch-version" title="November 2018">v26.0: Critical Failure</div>
                                     <div class="patch-list">
                                         <div>CRITICAL: Core NPC permanently offline (no save point)</div>
@@ -1666,27 +1895,27 @@
                                         <div>Grief processing module activated</div>
                                         <div>[This was the worst patch]</div>
                                     </div>
-                                </div>
+                                </article>
 
-                                <div class="patch">
+                                <article class="patch">
                                     <div class="patch-version" title="November 2017">v25.0: Nomad Mode</div>
                                     <div class="patch-list">
                                         <div>Guild change: Remote work protocol enabled</div>
                                         <div>Southeast Asia server tourism (2 months)</div>
                                         <div>Warning: Burnout accumulating from previous guild</div>
                                     </div>
-                                </div>
+                                </article>
 
-                                <div class="patch">
+                                <article class="patch">
                                     <div class="patch-version" title="November 2016">v24.0: Solo Run</div>
                                     <div class="patch-list">
                                         <div>Cohabitation experiment terminated</div>
                                         <div>Solo raid completed: Convention booth (0 effective backup)</div>
                                         <div>Public speaking feat unlocked</div>
                                     </div>
-                                </div>
+                                </article>
 
-                                <div class="patch">
+                                <article class="patch">
                                     <div class="patch-version" title="November 2015">v23.0: First Contact</div>
                                     <div class="patch-list">
                                         <div>Romance system activated for first time</div>
@@ -1694,9 +1923,9 @@
                                         <div>180k concurrent viewers... guild leader didn't watch</div>
                                         <div>Recognition stat remains at 0</div>
                                     </div>
-                                </div>
+                                </article>
 
-                                <div class="patch">
+                                <article class="patch">
                                     <div class="patch-version" title="November 2014">v22.0: The Incident</div>
                                     <div class="patch-list">
                                         <div>Account suspended (duration: 24 hours)</div>
@@ -1704,20 +1933,20 @@
                                         <div>Mass media coverage acquired</div>
                                         <div>Worth it</div>
                                     </div>
-                                </div>
+                                </article>
 
-                                <div class="patch">
+                                <article class="patch">
                                     <div class="patch-version" title="November 2013">v21.0: Server Transfer</div>
                                     <div class="patch-list">
                                         <div>SERVER TRANSFER: Tutorial zone -> Prague</div>
-                                        <div>Escaped B██████ instance</div>
+                                        <div>Escaped B<span aria-label="redacted" role="img">██████</span> instance</div>
                                         <div>First guild joined</div>
                                         <div>New map region unlocked</div>
                                         <div>Independence buff activated</div>
                                     </div>
-                                </div>
+                                </article>
 
-                                <div class="patch">
+                                <article class="patch">
                                     <div class="patch-version" title="November 2012">v20.0: Early Access</div>
                                     <div class="patch-list">
                                         <div>Finals quest skipped -> built Steam tools instead</div>
@@ -1725,31 +1954,32 @@
                                         <div>First remote guild joined (still in tutorial zone)</div>
                                         <div>Self-taught developer achievement unlocked</div>
                                     </div>
-                                </div>
+                                </article>
 
-                                <div class="patch">
+                                <article class="patch">
                                     <div class="patch-version" title="November 1992">v0.0: Initial Release</div>
                                     <div class="patch-list">
                                         <div>Initial release</div>
-                                        <div>Spawn point: B██████ (tutorial zone)</div>
+                                        <div>Spawn point: B<span aria-label="redacted" role="img">██████</span> (tutorial zone)</div>
                                         <div>Starting stats: Unbalanced</div>
                                         <div>Inherited code: Home instance visitor threshold set to unreachable</div>
                                         <div>Hidden debuffs: [REDACTED - to be discovered]</div>
                                         <div>Memory allocation: Fragmented (early game data partially corrupted)</div>
                                     </div>
-                                </div>
+                                </article>
                             </div>
-                        </div>
+                        </section>
                     </div>
 
                     <div class="panel" id="panel-achievements">
-                        <div class="section-box">
-                            <div class="section-title">ACHIEVEMENTS</div>
+                        <section class="section-box">
+                            <h2 class="section-title">ACHIEVEMENTS</h2>
 
-                            <div class="achievements-divider">━━━ UNLOCKED ━━━</div>
+                            <div class="achievements-divider" aria-hidden="true">━━━ UNLOCKED ━━━</div>
 
+                            <div role="group" aria-label="Unlocked achievements">
                             <div class="achievement">
-                                <div class="achievement-icon">🏠</div>
+                                <div class="achievement-icon" aria-hidden="true">🏠</div>
                                 <div class="achievement-info">
                                     <div class="achievement-name">FIRST STEPS</div>
                                     <div class="achievement-desc">Escaped the tutorial area. Finally.</div>
@@ -1758,7 +1988,7 @@
                             </div>
 
                             <div class="achievement">
-                                <div class="achievement-icon">🔨</div>
+                                <div class="achievement-icon" aria-hidden="true">🔨</div>
                                 <div class="achievement-info">
                                     <div class="achievement-name">KID DEVELOPER</div>
                                     <div class="achievement-desc">Banned for a day. Mass media coverage. Worth it.</div>
@@ -1767,7 +1997,7 @@
                             </div>
 
                             <div class="achievement">
-                                <div class="achievement-icon">📧</div>
+                                <div class="achievement-icon" aria-hidden="true">📧</div>
                                 <div class="achievement-info">
                                     <div class="achievement-name">ONE EMAIL</div>
                                     <div class="achievement-desc">Changed everything. 180,000 watched. They didn't.</div>
@@ -1776,7 +2006,7 @@
                             </div>
 
                             <div class="achievement">
-                                <div class="achievement-icon">🎌</div>
+                                <div class="achievement-icon" aria-hidden="true">🎌</div>
                                 <div class="achievement-info">
                                     <div class="achievement-name">THREE WEEKS</div>
                                     <div class="achievement-desc">Seven cities. Birthday abroad. The good year.</div>
@@ -1785,7 +2015,7 @@
                             </div>
 
                             <div class="achievement">
-                                <div class="achievement-icon">✨</div>
+                                <div class="achievement-icon" aria-hidden="true">✨</div>
                                 <div class="achievement-info">
                                     <div class="achievement-name">NAME CUSTOMIZATION</div>
                                     <div class="achievement-desc">Finally the right character model.</div>
@@ -1794,7 +2024,7 @@
                             </div>
 
                             <div class="achievement">
-                                <div class="achievement-icon">🦝</div>
+                                <div class="achievement-icon" aria-hidden="true">🦝</div>
                                 <div class="achievement-info">
                                     <div class="achievement-name">LEGENDARY DROP</div>
                                     <div class="achievement-desc">2x/week spawn rate. Infinite duration.</div>
@@ -1803,7 +2033,7 @@
                             </div>
 
                             <div class="achievement">
-                                <div class="achievement-icon">💊</div>
+                                <div class="achievement-icon" aria-hidden="true">💊</div>
                                 <div class="achievement-info">
                                     <div class="achievement-name">THE PILLS</div>
                                     <div class="achievement-desc">Two prescriptions. One for the brain. One for the liver (never opened - still in the drawer somewhere).</div>
@@ -1812,7 +2042,7 @@
                             </div>
 
                             <div class="achievement">
-                                <div class="achievement-icon">👥</div>
+                                <div class="achievement-icon" aria-hidden="true">👥</div>
                                 <div class="achievement-info">
                                     <div class="achievement-name">THE CIRCLE</div>
                                     <div class="achievement-desc">Learned to listen. Talked about the dark.</div>
@@ -1821,7 +2051,7 @@
                             </div>
 
                             <div class="achievement">
-                                <div class="achievement-icon">🎤</div>
+                                <div class="achievement-icon" aria-hidden="true">🎤</div>
                                 <div class="achievement-info">
                                     <div class="achievement-name">THE SPEECH</div>
                                     <div class="achievement-desc">They actually listened.</div>
@@ -1830,7 +2060,7 @@
                             </div>
 
                             <div class="achievement">
-                                <div class="achievement-icon">🧬</div>
+                                <div class="achievement-icon" aria-hidden="true">🧬</div>
                                 <div class="achievement-info">
                                     <div class="achievement-name">THE REVELATION</div>
                                     <div class="achievement-desc">Hidden for decades. No one left to ask.</div>
@@ -1839,7 +2069,7 @@
                             </div>
 
                             <div class="achievement">
-                                <div class="achievement-icon">🩺</div>
+                                <div class="achievement-icon" aria-hidden="true">🩺</div>
                                 <div class="achievement-info">
                                     <div class="achievement-name">SKILL ISSUE</div>
                                     <div class="achievement-desc">10.5 months for this?</div>
@@ -1848,96 +2078,99 @@
                             </div>
 
                             <div class="achievement">
-                                <div class="achievement-icon">✊</div>
+                                <div class="achievement-icon" aria-hidden="true">✊</div>
                                 <div class="achievement-info">
                                     <div class="achievement-name">STANDING UP</div>
                                     <div class="achievement-desc">I know what to do.</div>
                                     <div class="achievement-date">Unlocked: April 2025</div>
                                 </div>
                             </div>
+                            </div>
 
-                            <div class="achievements-divider">━━━ LOCKED ━━━</div>
+                            <div class="achievements-divider" aria-hidden="true">━━━ LOCKED ━━━</div>
 
-                            <div class="achievement" id="locked-1">
-                                <div class="achievement-icon locked">💊</div>
+                            <div role="group" aria-label="Locked achievements">
+                            <div class="achievement" id="locked-1" role="button" tabindex="0">
+                                <div class="achievement-icon locked" aria-hidden="true">💊</div>
                                 <div class="achievement-info">
                                     <div class="achievement-name">THE MEDICATION PATCH</div>
                                     <div class="achievement-desc">Start ADHD medication</div>
                                     <div class="achievement-progress">
-                                        <div class="cs-progress-bar"><div class="bars" style="width: 5%;"></div></div>
+                                        <div class="cs-progress-bar" aria-hidden="true"><div class="bars" style="width: 5%;"></div></div>
                                         <div class="progress-text">Progress: Blocked by "skill issue" diagnosis. Borrowed friend's meds once.</div>
                                     </div>
                                 </div>
                             </div>
 
-                            <div class="achievement" id="locked-2">
-                                <div class="achievement-icon locked">🧹</div>
+                            <div class="achievement" id="locked-2" role="button" tabindex="0">
+                                <div class="achievement-icon locked" aria-hidden="true">🧹</div>
                                 <div class="achievement-info">
                                     <div class="achievement-name">THE CLEAN APARTMENT</div>
                                     <div class="achievement-desc">Maintain cleanliness for 30 days</div>
                                     <div class="achievement-progress">
-                                        <div class="cs-progress-bar"><div class="bars" style="width: 0%;"></div></div>
+                                        <div class="cs-progress-bar" aria-hidden="true"><div class="bars" style="width: 0%;"></div></div>
                                         <div class="progress-text">Progress: 0/30 days (bugged since 2019)</div>
                                     </div>
                                 </div>
                             </div>
 
-                            <div class="achievement" id="locked-3">
-                                <div class="achievement-icon locked">😴</div>
+                            <div class="achievement" id="locked-3" role="button" tabindex="0">
+                                <div class="achievement-icon locked" aria-hidden="true">😴</div>
                                 <div class="achievement-info">
                                     <div class="achievement-name">REGULAR SLEEP SCHEDULE</div>
                                     <div class="achievement-desc">Go to bed before midnight for 7 days</div>
                                     <div class="achievement-progress">
-                                        <div class="cs-progress-bar"><div class="bars" style="width: 20%;"></div></div>
+                                        <div class="cs-progress-bar" aria-hidden="true"><div class="bars" style="width: 20%;"></div></div>
                                         <div class="progress-text">Progress: Record: 2 days</div>
                                     </div>
                                 </div>
                             </div>
 
-                            <div class="achievement" id="locked-4">
-                                <div class="achievement-icon locked">🍳</div>
+                            <div class="achievement" id="locked-4" role="button" tabindex="0">
+                                <div class="achievement-icon locked" aria-hidden="true">🍳</div>
                                 <div class="achievement-info">
                                     <div class="achievement-name">HOME COOKING</div>
                                     <div class="achievement-desc">Cook at home for 14 consecutive days</div>
                                     <div class="achievement-progress">
-                                        <div class="cs-progress-bar"><div class="bars" style="width: 35%;"></div></div>
+                                        <div class="cs-progress-bar" aria-hidden="true"><div class="bars" style="width: 35%;"></div></div>
                                         <div class="progress-text">Progress: Variable</div>
                                     </div>
                                 </div>
                             </div>
 
-                            <div class="achievement" id="locked-5">
-                                <div class="achievement-icon locked">🏠</div>
+                            <div class="achievement" id="locked-5" role="button" tabindex="0">
+                                <div class="achievement-icon locked" aria-hidden="true">🏠</div>
                                 <div class="achievement-info">
                                     <div class="achievement-name">MULTIPLAYER ENABLED</div>
                                     <div class="achievement-desc">Host visitors in home instance</div>
                                     <div class="achievement-progress">
-                                        <div class="cs-progress-bar"><div class="bars" style="width: 10%;"></div></div>
+                                        <div class="cs-progress-bar" aria-hidden="true"><div class="bars" style="width: 10%;"></div></div>
                                         <div class="progress-text">Progress: Visitor threshold inherited from legacy code. Partially overwritten.</div>
                                     </div>
                                 </div>
                             </div>
 
-                            <div class="achievement" id="locked-6">
-                                <div class="achievement-icon locked">⏪</div>
+                            <div class="achievement" id="locked-6" role="button" tabindex="0">
+                                <div class="achievement-icon locked" aria-hidden="true">⏪</div>
                                 <div class="achievement-info">
                                     <div class="achievement-name">THE EXCAVATION</div>
                                     <div class="achievement-desc">Process early game data</div>
                                     <div class="achievement-progress">
-                                        <div class="cs-progress-bar"><div class="bars" style="width: 5%;"></div></div>
+                                        <div class="cs-progress-bar" aria-hidden="true"><div class="bars" style="width: 5%;"></div></div>
                                         <div class="progress-text">Progress: Forward-processing playstyle preferred. Some quests may require looking back.</div>
                                     </div>
                                 </div>
                             </div>
+                            </div>
 
                             <div class="achievement" id="hidden-achievement" style="display: none;">
-                                <div class="achievement-icon">❓</div>
+                                <div class="achievement-icon" aria-hidden="true">❓</div>
                                 <div class="achievement-info">
                                     <div class="achievement-name">[REDACTED]</div>
                                     <div class="achievement-desc">??? - "Some achievements stay hidden"</div>
                                 </div>
                             </div>
-                        </div>
+                        </section>
                     </div>
                 </div>
             </div>
@@ -1945,7 +2178,7 @@
             <!-- Sidebar -->
             <div class="store-sidebar">
                 <div class="purchase-box">
-                    <div class="purchase-title">A███: The Complete Experience</div>
+                    <div class="purchase-title">A<span aria-label="redacted" role="img">███</span>: The Complete Experience</div>
                     <div class="price">Free to Play*</div>
                     <div class="price-note">*Conditions apply. Energy costs variable.<br>Sleep schedule sold separately.</div>
                     <button class="cs-btn play-btn" id="play-btn">PLAY GAME</button>
@@ -2051,29 +2284,124 @@
                     </div>
                 </div>
             </div>
-        </div>
+        </main>
 
         <!-- Footer -->
-        <div class="store-footer">
+        <footer class="store-footer">
             © 2025 Nocturnal Scavenger Studios. All rights reserved.<br>
             Life sold as-is. No refunds. Results may vary.<br>
             Styled with <a href="https://cs16.samke.me">cs16.css</a>
-            · <a href="#" onclick="toggleHD(event)" id="hd-toggle">HD font</a><br><br>
+            · <a href="#" onclick="toggleHD(event)" id="hd-toggle" class="always-readable">HD font</a>
+            · <a href="#" onclick="document.getElementById('a11y-dialog').showModal(); syncHDButtonState(); return false;" class="always-readable">accessibility</a><br><br>
             <a href="/">raccoon.land</a> · <a href="/games/">games</a> · <a href="/about/">about</a>
-        </div>
+        </footer>
+
+        <!-- Accessibility Statement Dialog -->
+        <dialog id="a11y-dialog" class="a11y-dialog always-readable">
+            <div class="a11y-dialog-header">
+                <h2 class="a11y-dialog-title">Accessibility Options</h2>
+                <button class="a11y-dialog-close" onclick="this.closest('dialog').close()" aria-label="Close dialog">×</button>
+            </div>
+            <div class="a11y-dialog-content">
+                <div class="a11y-section">
+                    <div class="a11y-section-title">Support</div>
+                    <div class="a11y-row">
+                        <span class="a11y-label">Screen readers</span>
+                        <span class="a11y-value supported">Full</span>
+                    </div>
+                    <div class="a11y-row">
+                        <span class="a11y-label">Keyboard navigation</span>
+                        <span class="a11y-value supported">Full</span>
+                    </div>
+                    <div class="a11y-row">
+                        <span class="a11y-label">Reduced motion</span>
+                        <span class="a11y-value supported">Respected</span>
+                    </div>
+                    <div class="a11y-row">
+                        <span class="a11y-label">Color reliance</span>
+                        <span class="a11y-value">None</span>
+                    </div>
+                </div>
+
+                <div class="a11y-section">
+                    <div class="a11y-section-title">Controls</div>
+                    <div class="a11y-keys">
+                        <span class="a11y-key"><kbd>Tab</kbd> Navigate</span>
+                        <span class="a11y-key"><kbd>Enter</kbd> / <kbd>Space</kbd> Activate</span>
+                        <span class="a11y-key"><kbd>Esc</kbd> Close dialogs</span>
+                    </div>
+                </div>
+
+                <div class="a11y-section">
+                    <div class="a11y-section-title">Display</div>
+                    <div class="a11y-row">
+                        <span class="a11y-label">Retro pixel font</span>
+                        <button class="cs-btn" id="a11y-hd-toggle" onclick="enableHDFont(event)">Enable HD font</button>
+                    </div>
+                    <div class="a11y-row">
+                        <span class="a11y-label">Browser zoom</span>
+                        <span class="a11y-value supported">Works to 200%+</span>
+                    </div>
+                </div>
+
+                <div class="a11y-section">
+                    <div class="a11y-section-title">About this page</div>
+                    <div class="a11y-row">
+                        <span class="a11y-label">Censored text (███)</span>
+                        <span class="a11y-value">Intentional - this is a self-review parody</span>
+                    </div>
+                    <div class="a11y-row">
+                        <span class="a11y-label">Hidden interactions</span>
+                        <span class="a11y-value">Many elements have click/tap surprises</span>
+                    </div>
+                </div>
+
+                <p class="a11y-note">
+                    Found a barrier? <a href="mailto:avi@raccoon.land">avi@raccoon.land</a>
+                </p>
+            </div>
+        </dialog>
     </div>
 
     <div class="easter-egg-hint" id="hint">try clicking things</div>
 
     <script>
-        // HD font toggle
+        // Accessible activation helper - click + Enter/Space keyboard support
+        function onActivate(el, handler) {
+            el.addEventListener('click', handler);
+            el.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    handler();
+                }
+            });
+        }
+
+        // HD font toggle - updates footer link
         // biome-ignore lint/correctness/noUnusedVariables: used in inline onclick handler
         function toggleHD(e) {
             e.preventDefault();
             document.documentElement.classList.toggle('hd-mode');
-            const link = e.target;
             const isHD = document.documentElement.classList.contains('hd-mode');
-            link.textContent = isHD ? 'pixel font' : 'HD font';
+            document.getElementById('hd-toggle').textContent = isHD ? 'pixel font' : 'HD font';
+            syncHDButtonState();
+        }
+
+        // Enable HD font (one-way from accessibility dialog)
+        // biome-ignore lint/correctness/noUnusedVariables: used in inline onclick handler
+        function enableHDFont(e) {
+            e.preventDefault();
+            document.documentElement.classList.add('hd-mode');
+            document.getElementById('hd-toggle').textContent = 'pixel font';
+            syncHDButtonState();
+        }
+
+        function syncHDButtonState() {
+            const btn = document.getElementById('a11y-hd-toggle');
+            if (!btn) return;
+            const isHD = document.documentElement.classList.contains('hd-mode');
+            btn.textContent = isHD ? 'HD font enabled' : 'Enable HD font';
+            btn.disabled = isHD;
         }
 
         // Play button
@@ -2111,9 +2439,8 @@
         });
 
         // Rating click reveals dev response
-        document.getElementById('rating').addEventListener('click', () => {
-            document.getElementById('dev-response').classList.add('visible');
-        });
+        const ratingEl = document.getElementById('rating');
+        onActivate(ratingEl, () => document.getElementById('dev-response').classList.add('visible'));
 
         // Show earlier patches
         document.getElementById('show-patches').addEventListener('click', function() {
@@ -2135,7 +2462,7 @@
 
         document.querySelectorAll('[id^="locked-"]').forEach(achievement => {
             achievement.style.cursor = 'pointer';
-            achievement.addEventListener('click', () => {
+            onActivate(achievement, () => {
                 alert(lockedResponses[responseIndex % lockedResponses.length]);
                 responseIndex++;
             });
@@ -2171,19 +2498,21 @@
 
         // Dog review vote
         let dogVotes = 100;
-        document.getElementById('dog-review-votes').addEventListener('click', () => {
+        const dogVotesEl = document.getElementById('dog-review-votes');
+        onActivate(dogVotesEl, () => {
             dogVotes += 10;
-            document.getElementById('dog-votes').textContent = dogVotes;
-            if (dogVotes > 150) {
-                document.getElementById('dog-votes').textContent = `${dogVotes} (good human!)`;
-            }
+            const text = dogVotes > 150 ? `${dogVotes} (good human!)` : dogVotes;
+            document.getElementById('dog-votes').textContent = text;
         });
 
         // Tag tooltips
         document.querySelectorAll('.tag').forEach(tag => {
-            tag.addEventListener('click', () => {
-                alert(tag.getAttribute('title'));
-            });
+            onActivate(tag, () => alert(tag.getAttribute('title')));
+        });
+
+        // Similar games
+        document.querySelectorAll('.similar-game').forEach(game => {
+            onActivate(game, () => alert(game.dataset.message));
         });
 
         // Screenshot carousel
@@ -2214,9 +2543,7 @@
         });
 
         document.querySelectorAll('.screenshot-thumb').forEach(thumb => {
-            thumb.addEventListener('click', () => {
-                updateScreenshot(parseInt(thumb.dataset.index, 10));
-            });
+            onActivate(thumb, () => updateScreenshot(parseInt(thumb.dataset.index, 10)));
         });
     </script>
 </body>
