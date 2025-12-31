@@ -53,6 +53,29 @@ describe("markdown", () => {
 			expect(result).toContain('alt="A photo"');
 			expect(result).toContain('class="featured"');
 		});
+
+		test("should not wrap images already inside anchor tags", () => {
+			const html = '<a href="/page/"><img src="photo.jpg" alt="Linked"></a>';
+			const result = makeImagesClickable(html);
+
+			// Should not add another anchor wrapper (only one <a tag)
+			const anchorCount = (result.match(/<a /g) || []).length;
+			expect(anchorCount).toBe(1);
+			expect(result).toContain('href="/page/"');
+			// Should still add lazy loading
+			expect(result).toContain('loading="lazy"');
+		});
+
+		test("should handle mixed linked and unlinked images", () => {
+			const html =
+				'<a href="/page/"><img src="linked.jpg"></a><img src="standalone.jpg">';
+			const result = makeImagesClickable(html);
+
+			// Linked image should keep original anchor
+			expect(result).toContain('href="/page/"');
+			// Standalone image should get wrapped
+			expect(result).toContain('<a href="standalone.jpg"');
+		});
 	});
 
 	describe("addHeadingAnchors", () => {
@@ -184,6 +207,19 @@ describe("markdown", () => {
 			expect(result).toContain("&quot;quotes&quot;");
 		});
 
+		test("should escape HTML tags in footnote content", () => {
+			const html = `
+				<a id="footnote-ref-1" href="#footnote-1" data-footnote-ref>1</a>
+				<li id="footnote-1"><p>The <code>&lt;marquee&gt;</code> element works. <a data-footnote-backref>↩</a></p></li>
+			`;
+			const result = injectFootnoteTooltips(html);
+
+			// HTML tags should be escaped so they don't render in tooltip
+			expect(result).toContain("&lt;code&gt;");
+			expect(result).toContain("&lt;/code&gt;");
+			expect(result).not.toContain('data-tooltip="The <code>');
+		});
+
 		test("should handle multiple footnotes", () => {
 			const html = `
 				<a id="footnote-ref-1" href="#footnote-1" data-footnote-ref>1</a>
@@ -220,6 +256,32 @@ describe("markdown", () => {
 				'id="footnote-ref-2" href="#footnote-2" data-footnote-ref',
 			);
 			expect(result).not.toMatch(/footnote-ref-2[^>]*data-tooltip="/);
+		});
+
+		test("should handle named footnotes", () => {
+			const html = `
+				<a id="footnote-ref-note-a" href="#footnote-note-a" data-footnote-ref>1</a>
+				<a id="footnote-ref-note-b" href="#footnote-note-b" data-footnote-ref>2</a>
+				<li id="footnote-note-a"><p>First named note. <a data-footnote-backref>↩</a></p></li>
+				<li id="footnote-note-b"><p>Second named note. <a data-footnote-backref>↩</a></p></li>
+			`;
+			const result = injectFootnoteTooltips(html);
+
+			expect(result).toContain('data-tooltip="First named note."');
+			expect(result).toContain('data-tooltip="Second named note."');
+		});
+
+		test("should handle mixed numbered and named footnotes", () => {
+			const html = `
+				<a id="footnote-ref-1" href="#footnote-1" data-footnote-ref>1</a>
+				<a id="footnote-ref-named" href="#footnote-named" data-footnote-ref>2</a>
+				<li id="footnote-1"><p>Numbered footnote. <a data-footnote-backref>↩</a></p></li>
+				<li id="footnote-named"><p>Named footnote. <a data-footnote-backref>↩</a></p></li>
+			`;
+			const result = injectFootnoteTooltips(html);
+
+			expect(result).toContain('data-tooltip="Numbered footnote."');
+			expect(result).toContain('data-tooltip="Named footnote."');
 		});
 	});
 

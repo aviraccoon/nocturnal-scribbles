@@ -5,11 +5,26 @@
 /**
  * Wraps standalone images in anchor tags to make them clickable.
  * Also adds lazy loading for better performance.
+ * Skips images that are already inside anchor tags.
  */
 export function makeImagesClickable(html: string): string {
 	return html.replace(
 		/<img\s+([^>]*\bsrc=["']([^"']+)["'][^>]*)>/g,
-		'<a href="$2" target="_blank"><img $1 loading="lazy"></a>',
+		(_match, attrs, src, offset) => {
+			// Check if this image is already inside an anchor tag
+			// Look backwards for unclosed <a> tag
+			const before = html.slice(0, offset);
+			const lastAnchorOpen = before.lastIndexOf("<a ");
+			const lastAnchorClose = before.lastIndexOf("</a>");
+			const isInsideAnchor =
+				lastAnchorOpen > lastAnchorClose && lastAnchorOpen !== -1;
+
+			if (isInsideAnchor) {
+				// Just add lazy loading, don't wrap in anchor
+				return `<img ${attrs} loading="lazy">`;
+			}
+			return `<a href="${src}" target="_blank"><img ${attrs} loading="lazy"></a>`;
+		},
 	);
 }
 
@@ -41,9 +56,10 @@ export function processExternalLinks(html: string): string {
  */
 export function injectFootnoteTooltips(html: string): string {
 	// Extract footnote definitions: <li id="footnote-N"><p>Content... <a data-footnote-backref>↩</a></p></li>
+	// Supports both numbered (footnote-1) and named (footnote-irony) footnotes
 	const footnotes = new Map<string, string>();
 	const footnoteDefRegex =
-		/<li id="(footnote-\d+)">\s*<p>([\s\S]*?)<a[^>]*data-footnote-backref[^>]*>[^<]*<\/a>\s*<\/p>\s*<\/li>/g;
+		/<li id="(footnote-[\w-]+)">\s*<p>([\s\S]*?)<a[^>]*data-footnote-backref[^>]*>[^<]*<\/a>\s*<\/p>\s*<\/li>/g;
 
 	for (const match of html.matchAll(footnoteDefRegex)) {
 		const id = match[1];
@@ -59,12 +75,16 @@ export function injectFootnoteTooltips(html: string): string {
 
 	// Inject data-tooltip attribute into each reference link
 	return html.replace(
-		/<a\s+id="(footnote-ref-\d+)"\s+href="#(footnote-\d+)"\s+data-footnote-ref/g,
+		/<a\s+id="(footnote-ref-[\w-]+)"\s+href="#(footnote-[\w-]+)"\s+data-footnote-ref/g,
 		(fullMatch, refId, footnoteId) => {
 			const content = footnotes.get(footnoteId);
 			if (content) {
-				// Escape quotes for HTML attribute
-				const escaped = content.replace(/"/g, "&quot;");
+				// Escape HTML for safe tooltip display
+				const escaped = content
+					.replace(/&/g, "&amp;")
+					.replace(/</g, "&lt;")
+					.replace(/>/g, "&gt;")
+					.replace(/"/g, "&quot;");
 				return `<a id="${refId}" href="#${footnoteId}" data-footnote-ref data-tooltip="${escaped}"`;
 			}
 			return fullMatch;
