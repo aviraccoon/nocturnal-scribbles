@@ -61,7 +61,7 @@ So absolutely no promises about any kind of schedule or what I'll actually talk 
 
 # Interested? Hit the RSS bell, err, button
 
-Look, there's no analytics, no tracking, no newsletter or anything. I want a good old site with no bullshit like this. It's all running on a [very simple blog generator](https://github.com/AviDuda/nocturnal-scribbles) I built in one night for this purpose.
+Look, there's no analytics, no tracking, no newsletter or anything. I want a good old site with no bullshit like this. It's all running on a [very simple blog generator](https://github.com/aviraccoon/nocturnal-scribbles) I built in one night for this purpose.
 
 There's the main RSS feed and also per-tag feeds if you're interested only in specific areas.
 

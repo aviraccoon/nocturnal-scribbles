@@ -37,11 +37,11 @@ The "nocturnal scribbles" part is literal - I do my best work between 10pm and 4
 
 # This blog
 
-[Custom static site generator](https://github.com/AviDuda/nocturnal-scribbles), built in one night with Bun and TypeScript. No frameworks, no tracking, no analytics, no bullshit. Just markdown files in git that become HTML.
+[Custom static site generator](https://github.com/aviraccoon/nocturnal-scribbles), built in one night with Bun and TypeScript. No frameworks, no tracking, no analytics, no bullshit. Just markdown files in git that become HTML.
 
 # Get in touch
 
-- GitHub: [@AviDuda](https://github.com/AviDuda)
+- GitHub: [@aviraccoon](https://github.com/aviraccoon)
 - Mastodon: [@avi@chitter.xyz](https://chitter.xyz/@avi)
 - Bluesky: [@aviraccoon.bsky.social](https://bsky.app/profile/aviraccoon.bsky.social)
 

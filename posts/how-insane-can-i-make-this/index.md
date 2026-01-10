@@ -131,7 +131,7 @@ This thing is becoming a playground. Some directions I'm excited about:
 
 **More ways to generate:** Right now it reacts to page content or plays radio stations. I want modes for generating specific things - "give me 30 seconds of tense ambient" or "loop-ready chiptune for a game scene." Shareable song seeds so you can save and recall your favorites. Stem exports for mixing.
 
-**More genres:** Rock/metal, drum & bass, trip-hop, eurodance, industrial, gabber, acid. The [IDEAS.md](https://github.com/AviDuda/nocturnal-scribbles/blob/main/src/geocities/music/IDEAS.md) has the full list.
+**More genres:** Rock/metal, drum & bass, trip-hop, eurodance, industrial, gabber, acid. The [IDEAS.md](https://github.com/aviraccoon/nocturnal-scribbles/blob/main/src/geocities/music/IDEAS.md) has the full list.
 
 **More radio chaos:** Dial-up modem handshake sounds between songs. ICQ "uh oh" notifications. Weather reports for the information superhighway. Time-locked stations that only broadcast at certain hours. Winamp skins for the player.
 
@@ -139,7 +139,7 @@ This thing is becoming a playground. Some directions I'm excited about:
 
 **More silly things:** Easter eggs. A cursor theremin. Typing percussion. Whatever sounds fun at 3 AM.
 
-No timeline. It'll happen when it happens. The whole thing is [open source](https://github.com/AviDuda/nocturnal-scribbles) (MIT license). The code is a beautiful mess, like all good Geocities tributes.
+No timeline. It'll happen when it happens. The whole thing is [open source](https://github.com/aviraccoon/nocturnal-scribbles) (MIT license). The code is a beautiful mess, like all good Geocities tributes.
 
 ---
 
