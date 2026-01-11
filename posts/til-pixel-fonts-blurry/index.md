@@ -1,10 +1,10 @@
 ---
 title: "TIL: Why pixel fonts look blurry in browsers (and when to give up)"
-date: 2025-12-31
+date: 2026-01-11
 tags: [til, fonts, css, web]
 slug: til-pixel-fonts-blurry
 description: "Pixel fonts blur at non-native sizes due to antialiasing. No CSS trick fixes it."
-draft: true
+draft: false
 ---
 
 I built a [fake Steam store page](https://raccoon.land/games/the-review/) using [cs16.css](https://cs16.samke.me/), a CSS library that recreates the old Counter-Strike 1.6 / early Steam aesthetic. It includes ArialPixel, a pixel font designed on a 16×16 grid.
