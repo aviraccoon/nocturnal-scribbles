@@ -424,6 +424,8 @@ header h1 {
 nav {
 	display: flex;
 	gap: 1rem;
+	overflow-x: auto;
+	-webkit-overflow-scrolling: touch;
 }
 
 nav a {
@@ -888,6 +890,11 @@ footer {
 @media (max-width: 600px) {
 	header h1 {
 		font-size: 1.25rem;
+	}
+
+	nav {
+		gap: 0.75rem;
+		padding-bottom: 0.25rem;
 	}
 
 	.post-header h2 {
