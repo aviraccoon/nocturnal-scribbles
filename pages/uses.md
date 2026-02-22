@@ -9,7 +9,7 @@ description: "Hardware, software, and tools I actually use."
 - **MacBook Pro M4 Pro** - 48GB RAM. Main machine for everything.
 - **MacBook Pro M1** - 16GB RAM. Previous machine, will probably become a home server.
 - **iPhone 15 Pro**
-- **AirPods Pro 2**
+- **AirPods Pro 3**
 - **Steam Deck** - Portable gaming, actually gets used
 - **Xbox Series X** - Main console
 - **Nintendo Switch** - Portable/couch gaming
@@ -23,7 +23,7 @@ All devices are named after raccoons and other "forbidden cats" - nocturnal crea
 - **Claude Code** - Where I spend most of my time. Coding, writing, thinking.
 - **Kagi** - Search engine. Trying to avoid Google where I can.
 - **Orion** - Main browser. WebKit-based, supports Chrome and Firefox extensions. Same folks who make Kagi.
-- **Cursor** - IDE when I need one
+- **Zed** - IDE when I need one
 - **Obsidian** - Personal vault for journaling, patterns, life management
 - **Warp** - Terminal, though looking for something less AI-focused. I like the command blocks and output filtering, but want simpler.
 - **Discord**, **Telegram** - Where I talk to people
@@ -54,4 +54,4 @@ The source of truth is [on GitHub](https://github.com/aviraccoon/system).
 
 This blog runs on a [custom static site generator](https://github.com/aviraccoon/nocturnal-scribbles).
 
-Last updated: January 2026
+Last updated: February 2026

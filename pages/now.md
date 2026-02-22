@@ -6,9 +6,9 @@ description: "Current focus, recent wins, and what I'm working on."
 
 # Currently focused on
 
-- Making small games
-- Writing on the blog
+- Making small (34,000 lines of code counts as small, right?) games
 - Building LLM tools for game market analysis (work)
+- Exploring Prague's cafe scene
 
 # Recent wins
 
@@ -19,6 +19,6 @@ description: "Current focus, recent wins, and what I'm working on."
 # Current interests
 
 - Game development as my creative medium
-- Declarative system configuration (nix-darwin)
+- Improving developer workflows and tooling
 
-Last updated: January 2026
+Last updated: February 2026
