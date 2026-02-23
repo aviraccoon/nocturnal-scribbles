@@ -406,8 +406,11 @@ describe("Dev Server", () => {
 			// Write a markdown file to trigger rebuild
 			writeFileSync(join(TEST_DIRS.watchDir, "test-post.md"), "# Test");
 
-			// Wait for fs event to propagate (longer timeout for CI reliability)
-			await Bun.sleep(300);
+			// Poll for fs event (CI can be slow)
+			const deadline = Date.now() + 2000;
+			while (!rebuildCalled && Date.now() < deadline) {
+				await Bun.sleep(50);
+			}
 
 			expect(rebuildCalled).toBe(true);
 
