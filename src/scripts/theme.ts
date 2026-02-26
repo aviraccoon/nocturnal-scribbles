@@ -5,7 +5,8 @@ const DEFAULT_THEME = "system";
 const T = window.ThemeUtils;
 const buttons =
 	document.querySelectorAll<HTMLButtonElement>("[data-theme-btn]");
-let currentTheme = localStorage.getItem("theme") || DEFAULT_THEME;
+let currentTheme =
+	window.__initialTheme || localStorage.getItem("theme") || DEFAULT_THEME;
 const chaosVars = [
 	"--bg",
 	"--text",

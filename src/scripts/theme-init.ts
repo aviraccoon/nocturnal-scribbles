@@ -2,7 +2,10 @@
 // Depends on theme-shared.js being loaded first
 
 const T = window.ThemeUtils;
-const theme = localStorage.getItem("theme") || "system";
+const isFromHN = document.referrer.includes("news.ycombinator.com");
+const theme = isFromHN
+	? "geocities"
+	: localStorage.getItem("theme") || "system";
 let activeTheme = theme;
 const themes = "__CHAOS_THEMES__".split(",");
 
@@ -34,3 +37,6 @@ if (theme === "shifting") {
 } else if (theme === "geocities") {
 	T.applyGeocitiesPlaceholder();
 }
+
+// Expose resolved theme for theme.ts (avoids duplicating referrer logic)
+window.__initialTheme = theme;

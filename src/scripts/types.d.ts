@@ -29,6 +29,7 @@ interface GeocitiesMusic {
 declare global {
 	interface Window {
 		ThemeUtils: ThemeUtils;
+		__initialTheme?: string;
 		applyGeocitiesTheme?: () => void;
 		addMusicPlayerStandalone?: () => void;
 		GeocitiesMusic?: GeocitiesMusic;
